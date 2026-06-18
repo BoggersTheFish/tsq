@@ -15,28 +15,6 @@ from .model_runner import MockModelRunner, ModelRunner
 from .precision_router import PrecisionRouter
 
 
-def _constraint_seed_tokens(prompt: str, constraints: Sequence[str]) -> List[str]:
-    text = " ".join([prompt, *constraints]).lower()
-    tokens: List[str] = []
-    if "number" in text or "digit" in text:
-        tokens.append("1")
-    if "date" in text:
-        tokens.append("2026-01-01")
-    for raw in constraints:
-        for word in raw.replace(".", " ").split():
-            cleaned = "".join(ch for ch in word if ch.isalnum() or ch in "_-")
-            if len(cleaned) > 4 and cleaned.lower() not in {"include", "exactly", "forbidden"}:
-                tokens.append(cleaned)
-                break
-    return tokens
-
-
-def _mock_token(index: int, precision: str, seeds: Sequence[str]) -> str:
-    if index < len(seeds):
-        return seeds[index]
-    return f"mock_{precision.lower()}_{index}"
-
-
 def run_tsq_generation(
     prompt: str,
     constraints: Sequence[str] | None = None,
@@ -56,22 +34,31 @@ def run_tsq_generation(
     tension_samples: List[Dict[str, Any]] = []
     cognitive_receipts: List[CognitiveReceipt] = []
     compute_receipts: List[ComputeReceipt] = []
-    seeds = _constraint_seed_tokens(prompt, constraints)
 
     for index in range(max(0, max_new_tokens)):
         recent_text = " ".join([prompt, *generated])[-500:]
-        logits = runner.step(precision=router.current_precision, prompt=prompt, generated=generated)
-        tension = scan_recent_window(recent_text, logits=logits, previous_failure=router.previous_failure)
+        step_result = runner.step(
+            precision=router.current_precision,
+            prompt=prompt,
+            constraints=constraints,
+            generated=generated,
+        )
+        tension = scan_recent_window(
+            recent_text,
+            logits=step_result,
+            previous_failure=router.previous_failure,
+        )
         precision, compute_receipt = router.decide(tension)
         if compute_receipt is not None:
             compute_receipts.append(compute_receipt)
             if receipt_store is not None:
                 receipt_store.append(compute_receipt)
-        generated.append(_mock_token(index, precision, seeds))
+        generated.append(step_result.token_text)
         tension_samples.append(
             {
                 "step": index,
                 "precision": precision,
+                "step_precision": step_result.precision,
                 "tension": tension["tension"],
                 "components": tension["components"],
             }

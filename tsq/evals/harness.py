@@ -1,5 +1,5 @@
 """
-Small v0.1 evaluation harness for fixed-precision baselines and TSQ dynamic routing.
+Small v0.2 evaluation harness for fixed-precision baselines and TSQ dynamic routing.
 """
 
 from __future__ import annotations

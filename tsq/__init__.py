@@ -6,7 +6,7 @@ Verifier hooks: import-time validation of TS headers on key modules
 Receipt outputs: package-level metadata receipt on import
 """
 
-__version__ = "0.1.0-wave1"
-__ts_wave__ = "TSQ-Wave-1-Skeleton"
+__version__ = "0.2.0"
+__ts_wave__ = "TSQ-Wave-2-BackendOwnedGeneration"
 
 from . import tension, verifier, receipts, runtime  # noqa: F401

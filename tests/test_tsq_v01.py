@@ -2,10 +2,31 @@ from tsq.evals.harness import compare_baselines
 from tsq.receipts.schema import make_cognitive_receipt
 from tsq.receipts.store import ReceiptStore
 from tsq.runtime.generation_loop import run_tsq_generation
-from tsq.runtime.model_runner import MockModelRunner
+from tsq.runtime.model_runner import MockModelRunner, StepResult
 from tsq.runtime.precision_router import PrecisionRouter
 from tsq.tension.scanner import scan_recent_window
 from tsq.verifier.base import Verifier
+
+
+class KnownTokenRunner:
+    name = "known-token-runner"
+
+    def __init__(self, tokens):
+        self.tokens = list(tokens)
+        self.call_count = 0
+
+    def step(self, precision="Q4", **kwargs):
+        index = self.call_count
+        self.call_count += 1
+        return StepResult(
+            token_text=self.tokens[index],
+            entropy_proxy=0.2,
+            precision=precision,
+            metadata={"index": index},
+        )
+
+    def generate(self, prompt, max_new_tokens=64, precision="Q4", **kwargs):
+        return prompt + " " + " ".join(self.tokens[:max_new_tokens])
 
 
 def test_scanner_returns_bounded_tension():
@@ -39,17 +60,32 @@ def test_receipt_store_appends_and_loads(tmp_path):
 
 
 def test_generation_loop_runs():
+    runner = MockModelRunner()
     result = run_tsq_generation(
         prompt="Brainstorm tension-aware inference. Must include one number.",
         constraints=["include one number"],
         max_new_tokens=12,
-        model=MockModelRunner(),
+        model=runner,
     )
     assert result["output"]
     assert result["stats"]["tokens_generated"] == 12
     assert result["stats"]["verifier_pass"] is True
+    assert "mock_" in result["output"]
+    assert runner.call_count == 12
     assert len(result["cognitive_receipts"]) == 1
     assert result["tension_samples"]
+
+
+def test_generation_loop_uses_runner_tokens_exactly():
+    runner = KnownTokenRunner(["alpha", "beta", "gamma"])
+    result = run_tsq_generation(
+        prompt="Use alpha beta gamma",
+        constraints=[],
+        max_new_tokens=3,
+        model=runner,
+    )
+    assert result["output"] == "Use alpha beta gamma alpha beta gamma"
+    assert runner.call_count == 3
 
 
 def test_verifier_failure_produces_failed_result():

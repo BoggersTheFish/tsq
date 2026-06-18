@@ -13,8 +13,8 @@ TSQ treats inference compute as a *structural* problem: precision should follow 
 
 This is the **inference/runtime layer** complement to [TensionLM](https://github.com/BoggersTheFish/TensionLM) (the model architecture layer using sigmoid tension attention).
 
-**Status**: v0.1 — Real-model-ready runtime (ModelRunner abstraction + receipt persistence + eval harness).
-Mock demo + full test suite pass. TransformersModelRunner is a ready stub (not yet wired to real weights).
+**Status**: v0.2 — Backend-owned token generation runtime (StepResult + ModelRunner boundary + receipt persistence + eval harness).
+Mock demo + full test suite pass. TransformersModelRunner remains optional and is not required for default tests.
 Still cheap-first: only entropy proxy + lexical risk + verifier failure in hot path.
 No custom quantization implemented yet.
 
@@ -22,7 +22,7 @@ No custom quantization implemented yet.
 > Precision should follow unresolved tension.  
 > High precision is an *exception handler*, not the default mode.
 
-The architecture roadmap lives in this README for v0.1; deeper design notes can be added under `docs/` as the runtime grows.
+The architecture roadmap lives in this README for v0.2; deeper design notes can be added under `docs/` as the runtime grows.
 
 ## Quick Start
 ```bash
@@ -62,7 +62,7 @@ tsq/
 - **Routing** → tension propagation → activation of higher-resolution "structures" (precision levels as resolution nodes).
 - Every component declares explicit **TS headers** (nodes, tension sources, verifier hooks, receipt outputs).
 
-**Wave Goal**: v0.1 is real-model-ready. Any compliant ModelRunner can be dropped in.
+**Wave Goal**: v0.2 is backend-owned at the generation boundary. Any compliant ModelRunner can be dropped in.
 The system demonstrates verifier-gated dynamic precision with persistent, inspectable receipts while keeping the hot path strictly cheap.
 
 ---
