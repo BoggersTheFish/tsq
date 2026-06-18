@@ -1,10 +1,19 @@
+import importlib.util
+import os
 from pathlib import Path
+
+import pytest
 
 from tsq.evals.harness import compare_baselines
 from tsq.receipts.schema import make_cognitive_receipt
 from tsq.receipts.store import ReceiptStore
 from tsq.runtime.generation_loop import run_tsq_generation
-from tsq.runtime.model_runner import MockModelRunner, RepairAwareMockRunner, StepResult
+from tsq.runtime.model_runner import (
+    MockModelRunner,
+    RepairAwareMockRunner,
+    StepResult,
+    TransformersModelRunner,
+)
 from tsq.runtime.precision_router import PrecisionRouter
 from tsq.tension.scanner import scan_recent_window
 from tsq.verifier.base import Verifier
@@ -174,6 +183,51 @@ def test_no_internal_token_fabrication_in_generation_loop():
     assert "_mock" + "_token" not in source
     assert "mock_" not in source
     assert "generated.append(step_result.token_text)" in source
+
+
+def test_importing_tsq_does_not_require_transformers():
+    import tsq
+
+    assert tsq.__version__
+
+
+def test_transformers_runner_raises_clear_import_error_when_dependencies_missing(monkeypatch):
+    original_find_spec = importlib.util.find_spec
+
+    def fake_find_spec(name, *args, **kwargs):
+        if name in {"transformers", "torch"}:
+            return None
+        return original_find_spec(name, *args, **kwargs)
+
+    monkeypatch.setattr(importlib.util, "find_spec", fake_find_spec)
+    with pytest.raises(ImportError, match="tsq\\[transformers\\]"):
+        TransformersModelRunner.from_pretrained("tiny-test-model")
+
+
+def test_transformers_runner_class_exposes_stepresult_interface():
+    assert hasattr(TransformersModelRunner, "from_pretrained")
+    assert hasattr(TransformersModelRunner, "step")
+    assert hasattr(TransformersModelRunner, "generate")
+    result = StepResult(token_text="x", entropy_proxy=0.3, precision="Q4")
+    assert result.token_text == "x"
+    assert result.entropy_proxy == 0.3
+    assert result.precision == "Q4"
+
+
+def test_optional_transformers_integration():
+    if os.environ.get("TSQ_RUN_TRANSFORMERS_TESTS") != "1":
+        pytest.skip("set TSQ_RUN_TRANSFORMERS_TESTS=1 to run optional Transformers integration")
+    model_id = os.environ.get("TSQ_TEST_MODEL_ID")
+    if not model_id:
+        pytest.skip("set TSQ_TEST_MODEL_ID to a tiny causal language model")
+    if importlib.util.find_spec("transformers") is None or importlib.util.find_spec("torch") is None:
+        pytest.skip("optional transformers dependencies are not installed")
+
+    runner = TransformersModelRunner.from_pretrained(model_id)
+    result = runner.step(prompt="Hello", generated=[], precision="Q4")
+    assert isinstance(result, StepResult)
+    assert result.metadata["backend"] == "transformers"
+    assert 0.0 <= result.entropy_proxy <= 1.0
 
 
 def test_verifier_failure_produces_failed_result():
