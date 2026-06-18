@@ -133,7 +133,7 @@ Reports include a compact precision histogram:
 
 ## Eval Suite Report
 
-`eval-suite` runs the built-in v0.6 fixture list and writes:
+`eval-suite` runs the built-in fixture list and writes:
 
 - `tasks`: per-task baseline comparison results plus task metadata
 - `aggregate.total_tasks`

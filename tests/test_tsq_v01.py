@@ -1,6 +1,8 @@
 import importlib.util
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -20,6 +22,9 @@ from tsq.runtime.model_runner import (
 from tsq.runtime.precision_router import PrecisionRouter
 from tsq.tension.scanner import scan_recent_window
 from tsq.verifier.base import Verifier
+from tsq.training.dataset_builder import build_datasets
+from tsq.training.schema import PreferenceExample, RepairTrainingExample, TrainingExample
+from tsq.training.validate_dataset import dataset_summary, validate_dataset
 
 
 class KnownTokenRunner:
@@ -461,6 +466,119 @@ def test_run_eval_suite_aggregate_contains_costs():
 
 def test_ci_workflow_exists():
     assert Path(".github/workflows/ci.yml").exists()
+
+
+def test_training_schema_serialization():
+    example = TrainingExample(
+        id="ex-1",
+        task_name="task",
+        split="train",
+        prompt="Prompt",
+        constraints=["include 7"],
+        input_text="Prompt: Prompt",
+        target_text="7",
+        example_type="number_preservation",
+        metadata={"source_task": "task"},
+    )
+    repair = RepairTrainingExample(
+        id="repair-1",
+        task_name="task",
+        split="train",
+        original_prompt="Prompt",
+        constraints=["include 7"],
+        failed_output="Prompt cheap",
+        verifier_failures=["missing number/date from prompt or constraints: 7"],
+        repair_prompt="Repair:",
+        repair_target="7",
+        final_output="Prompt cheap 7",
+        metadata={},
+    )
+    preference = PreferenceExample(
+        id="pref-1",
+        prompt="Prompt",
+        constraints=["include 7"],
+        chosen_output="Prompt cheap 7",
+        rejected_output="Prompt cheap",
+        reason="verifier failure",
+        metadata={},
+    )
+    assert example.to_dict()["target_text"] == "7"
+    assert repair.to_dict()["verifier_failures"]
+    assert preference.to_dict()["chosen_output"] != preference.to_dict()["rejected_output"]
+
+
+def test_dataset_builder_writes_and_validates_all_files(tmp_path):
+    paths = build_datasets(tmp_path / "generated", include_example_reports="examples/reports")
+    assert set(paths) == {
+        "supervised_train",
+        "supervised_eval",
+        "repair_train",
+        "preference_pairs",
+    }
+    for path in paths.values():
+        assert path.exists()
+        rows = validate_dataset(path)
+        assert rows
+    summary = dataset_summary(paths["supervised_train"])
+    assert summary["examples"] > 0
+    assert summary["example_type_counts"]
+
+
+def test_repair_dataset_contains_verifier_failures_and_preference_outputs(tmp_path):
+    paths = build_datasets(tmp_path / "generated")
+    repair_rows = validate_dataset(paths["repair_train"])
+    preference_rows = validate_dataset(paths["preference_pairs"])
+    assert repair_rows
+    assert all(row["verifier_failures"] for row in repair_rows)
+    assert preference_rows
+    assert all(row["chosen_output"] and row["rejected_output"] for row in preference_rows)
+    assert any(row["chosen_output"] != row["rejected_output"] for row in preference_rows)
+
+
+def test_cli_build_validate_and_summary_dataset(tmp_path, capsys):
+    out_dir = tmp_path / "generated"
+    code = cli_main(
+        [
+            "build-dataset",
+            "--out-dir",
+            str(out_dir),
+            "--include-example-reports",
+            "examples/reports",
+        ]
+    )
+    assert code == 0
+    train_path = out_dir / "tsq_supervised_train.jsonl"
+    code = cli_main(["validate-dataset", "--path", str(train_path)])
+    assert code == 0
+    assert "valid dataset" in capsys.readouterr().out
+    code = cli_main(["dataset-summary", "--path", str(train_path)])
+    assert code == 0
+    assert "examples:" in capsys.readouterr().out
+
+
+def test_train_lora_dry_run_without_heavy_deps(tmp_path):
+    paths = build_datasets(tmp_path / "generated")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/train_lora.py",
+            "--model-id",
+            "dry-run-model",
+            "--train-jsonl",
+            str(paths["supervised_train"]),
+            "--eval-jsonl",
+            str(paths["supervised_eval"]),
+            "--output-dir",
+            str(tmp_path / "lora"),
+            "--dry-run",
+        ],
+        cwd=Path.cwd(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "dry-run ok" in result.stdout
 
 
 def test_cli_transformers_backend_missing_model_or_dependencies_is_clear(tmp_path, capsys):

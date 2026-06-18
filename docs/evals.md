@@ -12,7 +12,7 @@ TSQ evals are small, deterministic fixtures for checking routing behavior, verif
 
 This prevents stateful mock runners, cached model state, or call counters from contaminating comparisons.
 
-## v0.6 Task Schema
+## Task Schema
 
 Built-in suite tasks live in `tsq/evals/tasks.py` and use this shape:
 
@@ -27,7 +27,7 @@ Built-in suite tasks live in `tsq/evals/tasks.py` and use this shape:
 }
 ```
 
-The v0.6 suite covers number preservation, date preservation, forbidden word avoidance, code fence closure, format compliance, multi-constraint prompts, repairable missing constraints, non-repairable forbidden output, exact-word requirements, short answers with numbers, negation, and simple code requirements.
+The built-in suite covers number preservation, date preservation, forbidden word avoidance, code fence closure, format compliance, multi-constraint prompts, repairable missing constraints, non-repairable forbidden output, exact-word requirements, short answers with numbers, negation, and simple code requirements.
 
 ## Running The Suite
 

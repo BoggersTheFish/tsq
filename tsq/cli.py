@@ -19,6 +19,8 @@ from .reports import (
 )
 from .runtime.generation_loop import run_tsq_generation
 from .runtime.model_runner import MockModelRunner, RepairAwareMockRunner, TransformersModelRunner
+from .training.dataset_builder import build_datasets
+from .training.validate_dataset import DatasetValidationError, dataset_summary, print_summary, validate_dataset
 
 
 class CliError(RuntimeError):
@@ -162,6 +164,30 @@ def _cmd_repair_eval(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_build_dataset(args: argparse.Namespace) -> int:
+    paths = build_datasets(
+        out_dir=args.out_dir,
+        include_example_reports=args.include_example_reports,
+    )
+    for name, path in paths.items():
+        print(f"wrote {name}: {path}")
+    return 0
+
+
+def _cmd_validate_dataset(args: argparse.Namespace) -> int:
+    try:
+        validate_dataset(args.path, max_chars=args.max_chars)
+    except DatasetValidationError as exc:
+        raise CliError(f"dataset validation failed: {exc}") from exc
+    print(f"valid dataset: {args.path}")
+    return 0
+
+
+def _cmd_dataset_summary(args: argparse.Namespace) -> int:
+    print_summary(dataset_summary(args.path))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m tsq.cli")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -188,10 +214,28 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_backend_args(repair_eval, default_backend="repair-mock")
     repair_eval.set_defaults(func=_cmd_repair_eval)
 
-    eval_suite = subparsers.add_parser("eval-suite", help="run built-in v0.6 eval suite")
+    eval_suite = subparsers.add_parser("eval-suite", help="run built-in eval suite")
     eval_suite.add_argument("--report", required=True)
     _add_common_backend_args(eval_suite, default_backend="repair-mock")
     eval_suite.set_defaults(func=_cmd_eval_suite)
+
+    build_dataset = subparsers.add_parser("build-dataset", help="build TSQ training JSONL files")
+    build_dataset.add_argument("--out-dir", default="data/generated")
+    build_dataset.add_argument("--include-example-reports")
+    build_dataset.set_defaults(func=_cmd_build_dataset)
+
+    validate_dataset_parser = subparsers.add_parser(
+        "validate-dataset", help="validate a TSQ training JSONL file"
+    )
+    validate_dataset_parser.add_argument("--path", required=True)
+    validate_dataset_parser.add_argument("--max-chars", type=int, default=8000)
+    validate_dataset_parser.set_defaults(func=_cmd_validate_dataset)
+
+    dataset_summary_parser = subparsers.add_parser(
+        "dataset-summary", help="summarize a TSQ training JSONL file"
+    )
+    dataset_summary_parser.add_argument("--path", required=True)
+    dataset_summary_parser.set_defaults(func=_cmd_dataset_summary)
 
     return parser
 

@@ -45,6 +45,19 @@ jobs:
           python -m tsq.cli eval-suite \
             --backend repair-mock \
             --report artifacts/ci/eval_suite.json
+          python -m tsq.cli build-dataset \
+            --out-dir artifacts/ci/data \
+            --include-example-reports examples/reports
+          python -m tsq.cli validate-dataset \
+            --path artifacts/ci/data/tsq_supervised_train.jsonl
+          python -m tsq.cli dataset-summary \
+            --path artifacts/ci/data/tsq_supervised_train.jsonl
+          python scripts/train_lora.py \
+            --model-id dry-run-model \
+            --train-jsonl artifacts/ci/data/tsq_supervised_train.jsonl \
+            --eval-jsonl artifacts/ci/data/tsq_supervised_eval.jsonl \
+            --output-dir artifacts/ci/lora \
+            --dry-run
 
       - name: Whitespace check
         run: git diff --check

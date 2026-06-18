@@ -13,10 +13,11 @@ TSQ treats inference compute as a *structural* problem: precision should follow 
 
 This is the **inference/runtime layer** complement to [TensionLM](https://github.com/BoggersTheFish/TensionLM) (the model architecture layer using sigmoid tension attention).
 
-**Status**: v0.6 — Eval integrity, cost accounting, and CI. TSQ now isolates baseline runs, tracks estimated routing cost by precision level, emits stronger reports, includes built-in eval suites, and runs mock-only CI.
-Mock/backend-runtime demo + full test suite pass. Optional Transformers support, verifier-gated repair, backend-owned token generation, and receipts remain active.
+**Status**: v0.7 — Fine-tuning dataset pipeline. TSQ can now generate supervised, repair, and preference-style JSONL examples from eval tasks and receipt traces, preparing the first TSQ-aware model fine-tune.
+Mock/backend-runtime demo + full test suite pass. Optional Transformers support, verifier-gated repair, backend-owned token generation, receipts, cost accounting, and eval suites remain active.
 Still cheap-first: only entropy proxy + lexical risk + verifier failure in the hot path.
 No custom quantization implemented yet.
+No fine-tuned TSQ model yet.
 
 ## Core Thesis (TS Native)
 > Precision should follow unresolved tension.  
@@ -71,7 +72,7 @@ python -m tsq.cli repair-eval \
   --report artifacts/repair_eval_report.json
 ```
 
-Built-in v0.6 eval suite:
+Built-in eval suite:
 ```bash
 python -m tsq.cli eval-suite \
   --backend repair-mock \
@@ -100,7 +101,7 @@ python -m tsq.cli eval-suite --backend repair-mock --report artifacts/eval_suite
 
 Example reports live under `examples/reports/`.
 
-The core v0.6 metrics are:
+The core eval/cost metrics are:
 
 - verifier pass rates for `always_Q4`, `always_Q8`, and `TSQ_dynamic`
 - `estimated_cost_units`
@@ -112,6 +113,29 @@ Cost is estimated routing cost, not measured GPU energy. The default model is Q4
 
 Current limitations remain explicit: no native TSQ quantization yet, no fine-tuned TSQ model yet, and precision labels are routing labels unless mapped to distinct backend model variants. Default CI is mock-only.
 
+## Training Data
+
+Build the seed datasets:
+```bash
+python -m tsq.cli build-dataset \
+  --out-dir data/generated \
+  --include-example-reports examples/reports
+```
+
+Validate a dataset:
+```bash
+python -m tsq.cli validate-dataset \
+  --path data/generated/tsq_supervised_train.jsonl
+```
+
+Summarize a dataset:
+```bash
+python -m tsq.cli dataset-summary \
+  --path data/generated/tsq_supervised_train.jsonl
+```
+
+v0.7 prepares the data substrate only. It does not fine-tune a model, does not add native TSQ quantization, and does not add heavy ML dependencies to default CI. v0.8 is the intended first small LoRA/QLoRA training run.
+
 ## Repo Structure
 ```
 tsq/
@@ -121,6 +145,7 @@ tsq/
 │   ├── verifier/    # base + cheap checkers
 │   ├── receipts/    # schema + store (JSONL)
 │   ├── evals/       # harness for baseline vs dynamic comparison
+│   ├── training/    # JSONL schemas, builders, validators
 ├── tests/
 ├── docs/
 └── pyproject.toml
@@ -133,12 +158,14 @@ tsq/
 - **Routing** → tension propagation → activation of higher-resolution "structures" (precision levels as resolution nodes).
 - Every component declares explicit **TS headers** (nodes, tension sources, verifier hooks, receipt outputs).
 
-**Wave Goal**: v0.6 makes TSQ more credible as a reproducible experiment runtime.
-Any compliant ModelRunner can be dropped in. The system demonstrates verifier-gated dynamic precision with bounded repair passes, isolated baseline comparisons, estimated routing-cost accounting, persistent receipts, and inspectable reports while keeping the hot path strictly cheap.
+**Wave Goal**: v0.7 turns TSQ traces into supervised, repair, and preference-style training examples.
+Any compliant ModelRunner can be dropped in. The system demonstrates verifier-gated dynamic precision with bounded repair passes, isolated baseline comparisons, estimated routing-cost accounting, persistent receipts, inspectable reports, and seed training datasets while keeping the hot path strictly cheap.
 See `docs/transformers_backend.md` for the optional real-model adapter.
 See `docs/reports.md` for report schemas and interpretation.
 See `docs/evals.md` for eval suite fixtures.
 See `docs/cost_accounting.md` for routing-cost semantics.
+See `docs/training_data.md` for dataset schemas and generation.
+See `docs/fine_tuning_plan.md` for the next training wave.
 
 ---
 

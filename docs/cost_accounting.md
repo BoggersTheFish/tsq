@@ -1,6 +1,6 @@
 # TSQ Cost Accounting
 
-TSQ v0.6 adds estimated routing-cost accounting. This is not measured GPU energy, wall-clock cost, or native quantization performance.
+TSQ includes estimated routing-cost accounting. This is not measured GPU energy, wall-clock cost, or native quantization performance.
 
 ## Default Cost Model
 
@@ -17,7 +17,7 @@ The default cost weights are:
 sum(tokens_at_precision * precision_cost_weight)
 ```
 
-The default model name in reports is `default_estimated_routing_cost_v0.6`.
+The default model name in reports is `default_estimated_routing_cost_v0.7`.
 
 ## Token Counts
 
