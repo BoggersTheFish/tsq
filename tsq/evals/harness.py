@@ -1,5 +1,5 @@
 """
-Small v0.2 evaluation harness for fixed-precision baselines and TSQ dynamic routing.
+Small v0.3 evaluation harness for fixed-precision baselines and TSQ dynamic routing.
 """
 
 from __future__ import annotations
@@ -10,6 +10,7 @@ from typing import Any, Dict, Sequence
 from ..runtime.generation_loop import run_tsq_generation
 from ..runtime.model_runner import MockModelRunner, ModelRunner
 from ..verifier.base import Verifier
+from .tasks import V03_REPAIR_TASKS
 
 
 def _fixed_precision_run(
@@ -20,15 +21,24 @@ def _fixed_precision_run(
     model: ModelRunner,
 ) -> Dict[str, Any]:
     start = perf_counter()
-    output = model.generate(prompt=prompt, max_new_tokens=max_new_tokens, precision=precision)
+    output = model.generate(
+        prompt=prompt,
+        max_new_tokens=max_new_tokens,
+        precision=precision,
+        constraints=constraints,
+    )
     verification = Verifier().verify(prompt=prompt, output=output, constraints=constraints)
     return {
         "output": output,
         "metrics": {
             "latency": perf_counter() - start,
             "verifier_pass": verification.passed,
+            "original_verifier_pass": verification.passed,
+            "final_verifier_pass": verification.passed,
             "escalations": 0,
             "receipts": 0,
+            "repair_attempted": False,
+            "repair_succeeded": False,
             "output_length": len(output),
         },
         "verification": verification,
@@ -59,8 +69,12 @@ def compare_baselines(
             "metrics": {
                 "latency": dynamic["stats"]["latency"],
                 "verifier_pass": dynamic["stats"]["verifier_pass"],
+                "original_verifier_pass": dynamic["stats"]["original_verifier_pass"],
+                "final_verifier_pass": dynamic["stats"]["final_verifier_pass"],
                 "escalations": dynamic["stats"]["escalations"],
                 "receipts": dynamic["stats"]["receipts"],
+                "repair_attempted": dynamic["stats"]["repair_attempted"],
+                "repair_succeeded": dynamic["stats"]["repair_succeeded"],
                 "output_length": dynamic["stats"]["output_length"],
             },
             "verification": dynamic["verification"],
@@ -75,3 +89,7 @@ def run_eval(
     model: ModelRunner | None = None,
 ) -> Dict[str, Dict[str, Any]]:
     return compare_baselines(prompt, constraints, max_new_tokens, model)
+
+
+def repair_eval_tasks() -> List[Dict[str, object]]:
+    return list(V03_REPAIR_TASKS)

@@ -4,7 +4,7 @@ Type: runtime_abstraction
 Description: Protocol + implementations for pluggable model backends.
              Allows the TSQ loop to remain model-agnostic while supporting
              mock (for dev) and real quantized models (Transformers, llama.cpp, etc.).
-             v0.2: backend-owned token generation via StepResult.
+             v0.3: backend-owned token generation with verifier-gated repair.
 Tension sources: none in the runner itself (tension lives in scanner + router)
 Edges:
   - runner.step(precision) → produces logits-like object with entropy_proxy
@@ -115,10 +115,84 @@ class MockModelRunner:
         return base + f" [MOCK_{precision.upper()}_OUT_{self.call_count}]"
 
 
+class RepairAwareMockRunner(MockModelRunner):
+    """
+    Deterministic mock backend that fails cheaply and repairs at escalated precision.
+
+    It exists to test the TSQ repair boundary without torch/transformers.
+    """
+
+    def __init__(self, name: str = "repair-aware-mock-runner"):
+        super().__init__(name=name)
+
+    def step(self, precision: str = "Q4", **kwargs: Any) -> StepResult:
+        if kwargs.get("repair_mode"):
+            self.call_count += 1
+            token_text = self._repair_token(precision=precision, **kwargs)
+            return StepResult(
+                token_text=token_text,
+                entropy_proxy=0.18,
+                precision=precision,
+                metadata={
+                    "repair_mode": True,
+                    "reason": "verification_failure",
+                    "precision": precision,
+                    "call_count": self.call_count,
+                },
+            )
+        return super().step(precision=precision, **kwargs)
+
+    def _next_token_text(self, precision: str, **kwargs: Any) -> str:
+        constraints = " ".join(kwargs.get("constraints", [])).lower()
+        index = len(kwargs.get("generated", []))
+        if "forbidden" in constraints and index == 0:
+            return "forbidden"
+        if "code fence" in constraints and index == 0:
+            return "```python"
+        return f"cheap_{precision.lower()}_{index}"
+
+    def _repair_token(self, precision: str, **kwargs: Any) -> str:
+        failures = " ".join(kwargs.get("verification_failures", [])).lower()
+        constraints = " ".join(kwargs.get("constraints", [])).lower()
+        if precision not in {"Q8", "FP16", "residual_unfolded"}:
+            return "repair_low_precision_noop"
+        if "missing number/date" in failures or "include 7" in constraints:
+            return "7"
+        if "unclosed code fence" in failures:
+            return "```"
+        if "constraint not reflected" in failures:
+            for word in constraints.replace(".", " ").split():
+                cleaned = "".join(ch for ch in word if ch.isalnum() or ch in "_-")
+                if len(cleaned) > 4 and cleaned.lower() not in {"include", "exactly", "forbidden"}:
+                    return cleaned
+        return "repair_noop"
+
+    def generate(
+        self,
+        prompt: str,
+        max_new_tokens: int = 64,
+        precision: str = "Q4",
+        **kwargs: Any,
+    ) -> str:
+        constraints = kwargs.get("constraints", [])
+        text = prompt
+        if precision in {"Q8", "FP16"}:
+            joined = " ".join(constraints).lower()
+            if "include 7" in joined:
+                text += " 7"
+            if "include checksum" in joined:
+                text += " checksum"
+            if "code fence" in joined:
+                text += " ```python ```"
+        elif constraints and "forbidden" in " ".join(constraints).lower():
+            text += " forbidden"
+        return text
+
+
 class TransformersModelRunner:
     """
     Adapter surface for real Hugging Face Transformers + quantization backends.
-    v0.2 keeps this optional so default tests do not require torch/transformers.
+    v0.3 keeps this optional so default tests do not require torch/transformers.
     When dependencies are present, this can be fleshed out to load
     Q4/Q8/FP16 variants of TensionLM or other models.
 
@@ -145,16 +219,16 @@ class TransformersModelRunner:
         """Factory hook for a future multi-precision Transformers backend."""
         instance = cls(name=f"transformers-{model_id.split('/')[-1]}")
         # In real code: load tokenizer + multiple model variants here
-        print(f"[TransformersModelRunner] adapter not wired in v0.2: {model_id}")
+        print(f"[TransformersModelRunner] adapter not wired in v0.3: {model_id}")
         return instance
 
     def step(self, precision: str = "Q4", **kwargs: Any) -> StepResult:
         raise NotImplementedError(
-            "TransformersModelRunner.step() is not implemented in v0.2. "
+            "TransformersModelRunner.step() is not implemented in v0.3. "
             "Use MockModelRunner for now or implement the real forward pass."
         )
 
     def generate(self, prompt: str, max_new_tokens: int = 64, precision: str = "Q4", **kwargs: Any) -> str:
         raise NotImplementedError(
-            "TransformersModelRunner.generate() is not implemented in v0.2."
+            "TransformersModelRunner.generate() is not implemented in v0.3."
         )

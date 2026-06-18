@@ -1,8 +1,10 @@
+from pathlib import Path
+
 from tsq.evals.harness import compare_baselines
 from tsq.receipts.schema import make_cognitive_receipt
 from tsq.receipts.store import ReceiptStore
 from tsq.runtime.generation_loop import run_tsq_generation
-from tsq.runtime.model_runner import MockModelRunner, StepResult
+from tsq.runtime.model_runner import MockModelRunner, RepairAwareMockRunner, StepResult
 from tsq.runtime.precision_router import PrecisionRouter
 from tsq.tension.scanner import scan_recent_window
 from tsq.verifier.base import Verifier
@@ -27,6 +29,32 @@ class KnownTokenRunner:
 
     def generate(self, prompt, max_new_tokens=64, precision="Q4", **kwargs):
         return prompt + " " + " ".join(self.tokens[:max_new_tokens])
+
+
+class RepairTokenRunner:
+    name = "repair-token-runner"
+
+    def __init__(self):
+        self.calls = []
+
+    def step(self, precision="Q4", **kwargs):
+        self.calls.append((precision, dict(kwargs)))
+        if kwargs.get("repair_mode"):
+            return StepResult(
+                token_text="checksum",
+                entropy_proxy=0.1,
+                precision=precision,
+                metadata={"repair_mode": True, "precision": precision},
+            )
+        return StepResult(
+            token_text="cheap",
+            entropy_proxy=0.1,
+            precision=precision,
+            metadata={"repair_mode": False},
+        )
+
+    def generate(self, prompt, max_new_tokens=64, precision="Q4", **kwargs):
+        return prompt
 
 
 def test_scanner_returns_bounded_tension():
@@ -88,6 +116,66 @@ def test_generation_loop_uses_runner_tokens_exactly():
     assert runner.call_count == 3
 
 
+def test_verifier_failure_triggers_compute_receipt_without_repair():
+    result = run_tsq_generation(
+        prompt="Respond briefly.",
+        constraints=["include checksum"],
+        max_new_tokens=1,
+        model=RepairTokenRunner(),
+        repair_on_failure=False,
+    )
+    assert result["stats"]["original_verifier_pass"] is False
+    assert result["stats"]["final_verifier_pass"] is False
+    assert result["stats"]["repair_attempted"] is False
+    assert len(result["compute_receipts"]) == 1
+    assert result["compute_receipts"][0].reason == "verification_failed_repair"
+    assert result["cognitive_receipts"] == []
+
+
+def test_repair_pass_runs_at_escalated_precision_and_succeeds():
+    runner = RepairAwareMockRunner()
+    result = run_tsq_generation(
+        prompt="Answer tersely.",
+        constraints=["include 7"],
+        max_new_tokens=1,
+        model=runner,
+    )
+    assert result["stats"]["original_verifier_pass"] is False
+    assert result["stats"]["final_verifier_pass"] is True
+    assert result["stats"]["repair_attempted"] is True
+    assert result["stats"]["repair_succeeded"] is True
+    assert result["stats"]["repair_tokens_generated"] == 1
+    repair_samples = [sample for sample in result["tension_samples"] if sample.get("repair")]
+    assert repair_samples
+    assert repair_samples[0]["step_precision"] == "Q8"
+    assert "7" in result["output"]
+
+
+def test_repair_tokens_are_backend_owned_step_results():
+    runner = RepairTokenRunner()
+    result = run_tsq_generation(
+        prompt="Respond briefly.",
+        constraints=["include checksum"],
+        max_new_tokens=1,
+        model=runner,
+    )
+    assert result["stats"]["original_verifier_pass"] is False
+    assert result["stats"]["final_verifier_pass"] is True
+    assert result["output"].endswith("cheap checksum")
+    repair_calls = [call for call in runner.calls if call[1].get("repair_mode")]
+    assert repair_calls
+    assert repair_calls[0][0] == "Q8"
+    assert repair_calls[0][1]["verification_failures"]
+    assert repair_calls[0][1]["current_output"].endswith("cheap")
+
+
+def test_no_internal_token_fabrication_in_generation_loop():
+    source = Path("tsq/runtime/generation_loop.py").read_text(encoding="utf-8")
+    assert "_mock" + "_token" not in source
+    assert "mock_" not in source
+    assert "generated.append(step_result.token_text)" in source
+
+
 def test_verifier_failure_produces_failed_result():
     result = Verifier().verify(
         prompt="Say hello",
@@ -106,11 +194,15 @@ def test_eval_harness_returns_all_three_baselines():
         model=MockModelRunner(),
     )
     assert set(results) == {"always_Q4", "always_Q8", "TSQ_dynamic"}
-    for run in results.values():
-        assert set(run["metrics"]) == {
-            "latency",
-            "verifier_pass",
-            "escalations",
-            "receipts",
-            "output_length",
-        }
+    dynamic_metrics = results["TSQ_dynamic"]["metrics"]
+    assert set(dynamic_metrics) == {
+        "latency",
+        "verifier_pass",
+        "original_verifier_pass",
+        "final_verifier_pass",
+        "escalations",
+        "receipts",
+        "repair_attempted",
+        "repair_succeeded",
+        "output_length",
+    }

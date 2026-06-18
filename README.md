@@ -13,16 +13,16 @@ TSQ treats inference compute as a *structural* problem: precision should follow 
 
 This is the **inference/runtime layer** complement to [TensionLM](https://github.com/BoggersTheFish/TensionLM) (the model architecture layer using sigmoid tension attention).
 
-**Status**: v0.2 — Backend-owned token generation runtime (StepResult + ModelRunner boundary + receipt persistence + eval harness).
-Mock demo + full test suite pass. TransformersModelRunner remains optional and is not required for default tests.
-Still cheap-first: only entropy proxy + lexical risk + verifier failure in hot path.
+**Status**: v0.3 — Verifier-gated repair loop: failed outputs trigger bounded high-precision repair passes with compute receipts.
+Mock/backend-runtime demo + full test suite pass. TransformersModelRunner remains optional and is not required for default tests.
+Still cheap-first: only entropy proxy + lexical risk + verifier failure in the hot path.
 No custom quantization implemented yet.
 
 ## Core Thesis (TS Native)
 > Precision should follow unresolved tension.  
 > High precision is an *exception handler*, not the default mode.
 
-The architecture roadmap lives in this README for v0.2; deeper design notes can be added under `docs/` as the runtime grows.
+The architecture roadmap lives in this README for v0.3; deeper design notes can be added under `docs/` as the runtime grows.
 
 ## Quick Start
 ```bash
@@ -62,8 +62,8 @@ tsq/
 - **Routing** → tension propagation → activation of higher-resolution "structures" (precision levels as resolution nodes).
 - Every component declares explicit **TS headers** (nodes, tension sources, verifier hooks, receipt outputs).
 
-**Wave Goal**: v0.2 is backend-owned at the generation boundary. Any compliant ModelRunner can be dropped in.
-The system demonstrates verifier-gated dynamic precision with persistent, inspectable receipts while keeping the hot path strictly cheap.
+**Wave Goal**: v0.3 repairs failed outputs through bounded backend-owned repair passes.
+Any compliant ModelRunner can be dropped in. The system demonstrates verifier-gated dynamic precision with persistent, inspectable receipts while keeping the hot path strictly cheap.
 
 ---
 

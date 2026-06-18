@@ -1,5 +1,5 @@
 """
-Cheap verifier primitives for TSQ v0.2.
+Cheap verifier primitives for TSQ v0.3.
 """
 
 from __future__ import annotations
