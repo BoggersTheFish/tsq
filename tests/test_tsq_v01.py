@@ -1,12 +1,15 @@
 import importlib.util
+import json
 import os
 from pathlib import Path
 
 import pytest
 
+from tsq.cli import main as cli_main
 from tsq.evals.harness import compare_baselines
 from tsq.receipts.schema import make_cognitive_receipt
 from tsq.receipts.store import ReceiptStore
+from tsq.reports import build_generation_report, to_jsonable
 from tsq.runtime.generation_loop import run_tsq_generation
 from tsq.runtime.model_runner import (
     MockModelRunner,
@@ -260,3 +263,135 @@ def test_eval_harness_returns_all_three_baselines():
         "repair_succeeded",
         "output_length",
     }
+
+
+def test_report_serialization_handles_receipts_and_verifier_results():
+    result = run_tsq_generation(
+        prompt="Respond briefly.",
+        constraints=["include checksum"],
+        max_new_tokens=1,
+        model=RepairTokenRunner(),
+    )
+    report = build_generation_report(
+        result=result,
+        backend="mock",
+        prompt="Respond briefly.",
+        constraints=["include checksum"],
+        model_name="repair-token-runner",
+    )
+    encoded = json.dumps(report)
+    decoded = json.loads(encoded)
+    assert decoded["verification"]["passed"] is True
+    assert decoded["compute_receipts"][0]["type"] == "compute"
+    assert to_jsonable(StepResult("x", 0.2, "Q4", {"source": "test"}))["metadata"]["source"] == "test"
+
+
+def test_cli_generate_mock_writes_json_report(tmp_path):
+    report = tmp_path / "run_report.json"
+    receipts = tmp_path / "receipts.jsonl"
+    code = cli_main(
+        [
+            "generate",
+            "--prompt",
+            "Brainstorm TSQ. Must include one number.",
+            "--constraint",
+            "include one number",
+            "--max-new-tokens",
+            "6",
+            "--backend",
+            "mock",
+            "--receipts",
+            str(receipts),
+            "--report",
+            str(report),
+        ]
+    )
+    assert code == 0
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert payload["mode"] == "generate"
+    assert payload["backend"] == "mock"
+    assert payload["stats"]["verifier_pass"] is True
+    assert receipts.exists()
+
+
+def test_cli_eval_mock_writes_all_baselines(tmp_path):
+    report = tmp_path / "eval_report.json"
+    code = cli_main(
+        [
+            "eval",
+            "--prompt",
+            "Explain TSQ with one number.",
+            "--constraint",
+            "include one number",
+            "--max-new-tokens",
+            "6",
+            "--backend",
+            "mock",
+            "--report",
+            str(report),
+        ]
+    )
+    assert code == 0
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert payload["mode"] == "eval"
+    assert set(payload["results"]) == {"always_Q4", "always_Q8", "TSQ_dynamic"}
+    assert "dynamic_passed" in payload["summary"]
+
+
+def test_cli_repair_eval_writes_aggregate_metrics(tmp_path):
+    report = tmp_path / "repair_eval_report.json"
+    code = cli_main(["repair-eval", "--backend", "repair-mock", "--report", str(report)])
+    assert code == 0
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert payload["mode"] == "repair-eval"
+    assert payload["aggregate"]["total_tasks"] == 3
+    assert payload["aggregate"]["repair_attempts"] >= 1
+    assert payload["aggregate"]["total_compute_receipts"] >= 1
+
+
+def test_cli_transformers_backend_missing_model_or_dependencies_is_clear(tmp_path, capsys):
+    report = tmp_path / "transformers_report.json"
+    code = cli_main(
+        [
+            "generate",
+            "--prompt",
+            "hello",
+            "--backend",
+            "transformers",
+            "--report",
+            str(report),
+        ]
+    )
+    assert code == 2
+    assert "--model-id is required" in capsys.readouterr().err
+
+    original_find_spec = importlib.util.find_spec
+
+    def fake_find_spec(name, *args, **kwargs):
+        if name in {"transformers", "torch"}:
+            return None
+        return original_find_spec(name, *args, **kwargs)
+
+    report_with_model = tmp_path / "transformers_model_report.json"
+    from pytest import MonkeyPatch
+
+    monkeypatch = MonkeyPatch()
+    monkeypatch.setattr(importlib.util, "find_spec", fake_find_spec)
+    try:
+        code = cli_main(
+            [
+                "generate",
+                "--prompt",
+                "hello",
+                "--backend",
+                "transformers",
+                "--model-id",
+                "tiny-test-model",
+                "--report",
+                str(report_with_model),
+            ]
+        )
+    finally:
+        monkeypatch.undo()
+    assert code == 2
+    assert "pip install -e '.[transformers]'" in capsys.readouterr().err

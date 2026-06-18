@@ -1,11 +1,11 @@
 """
-Small v0.3 evaluation harness for fixed-precision baselines and TSQ dynamic routing.
+Small v0.5 evaluation harness for fixed-precision baselines and TSQ dynamic routing.
 """
 
 from __future__ import annotations
 
 from time import perf_counter
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, List, Sequence
 
 from ..runtime.generation_loop import run_tsq_generation
 from ..runtime.model_runner import MockModelRunner, ModelRunner

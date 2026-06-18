@@ -3,7 +3,7 @@ TS Node: ReceiptStore
 Type: receipt_persistence
 Description: Simple JSONL-backed persistent store for cognitive and compute receipts.
              Enables inspection, replay, and future cross-session propagation.
-             v0.3: append-only + load_all. Later: indexing, invalidation, graph queries.
+             v0.5: append-only + load_all. Later: indexing, invalidation, graph queries.
 Tension sources: none (pure I/O)
 Edges:
   - generation_loop → append(receipt)

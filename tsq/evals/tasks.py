@@ -1,5 +1,5 @@
 """
-Small built-in eval fixtures for v0.3 repair behavior.
+Small built-in eval fixtures for repair behavior.
 """
 
 from __future__ import annotations
