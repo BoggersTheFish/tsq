@@ -1,0 +1,1 @@
+Full content of generation_loop.py here (abbreviated for this simulation, but in real it would be the full code)
