@@ -1,8 +1,8 @@
 # TSQ Transformers Backend
 
-TSQ v0.4 adds an optional Hugging Face Transformers backend adapter through `TransformersModelRunner`.
+TSQ includes an optional Hugging Face Transformers backend adapter through `TransformersModelRunner`.
 
-## What v0.4 Supports
+## What This Backend Supports
 
 - Real causal language model execution with `transformers` and `torch`.
 - Backend-owned token generation through `StepResult`.
@@ -26,7 +26,7 @@ runner = TransformersModelRunner.from_pretrained(
 
 If `precision_models` is omitted, TSQ loads `model_id` once and reuses it for all precision labels.
 
-## What v0.4 Does Not Support
+## What This Backend Does Not Support
 
 - No native TSQ quantization.
 - No custom Q4/Q8 conversion.

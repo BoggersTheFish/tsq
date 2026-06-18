@@ -1,0 +1,359 @@
+{
+  "backend": "mock",
+  "constraints": [
+    "include one number"
+  ],
+  "created_at": "2026-06-18T00:00:00+00:00",
+  "mode": "eval",
+  "model": "mock",
+  "prompt": "Explain TSQ with one number.",
+  "results": {
+    "TSQ_dynamic": {
+      "cognitive_receipts": [
+        {
+          "constraints": [
+            "include one number"
+          ],
+          "created_at": "2026-06-18T00:00:00+00:00",
+          "id": "example-receipt-001",
+          "metadata": {
+            "model": "mock-tensionlm-117m-q4q8",
+            "precision_histogram": {
+              "compute_receipt_count": 0,
+              "counts": {
+                "FP16": 0,
+                "Q4": 6,
+                "Q8": 0,
+                "residual_unfolded": 0
+              },
+              "escalation_count": 0,
+              "repair_tokens": {
+                "FP16": 0,
+                "Q4": 0,
+                "Q8": 0,
+                "residual_unfolded": 0
+              }
+            },
+            "repair_attempted": false,
+            "repair_succeeded": false,
+            "routing_summary": {
+              "cost_model_used": "default_estimated_routing_cost_v0.6",
+              "escalations": 0,
+              "estimated_cost_units": 6.0
+            },
+            "verifier_checkers": [
+              "constraint_preservation_checker",
+              "no_forbidden_words_checker",
+              "number_date_preservation_checker",
+              "code_fence_closure_checker"
+            ]
+          },
+          "output": "Explain TSQ with one number. 1 number mock_q4_2 mock_q4_3 mock_q4_4 mock_q4_5",
+          "prompt": "Explain TSQ with one number.",
+          "type": "cognitive",
+          "verified_by": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "verifier_result": {
+            "details": {
+              "checkers": [
+                "constraint_preservation_checker",
+                "no_forbidden_words_checker",
+                "number_date_preservation_checker",
+                "code_fence_closure_checker"
+              ],
+              "constraint_count": 1
+            },
+            "failures": [],
+            "passed": true
+          }
+        }
+      ],
+      "compute_receipts": [],
+      "final_verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [],
+        "passed": true
+      },
+      "metrics": {
+        "cost_model_used": "default_estimated_routing_cost_v0.6",
+        "escalations": 0,
+        "estimated_cost_units": 6.0,
+        "final_verifier_pass": true,
+        "latency": 0.0,
+        "original_verifier_pass": true,
+        "output_length": 77,
+        "precision_histogram": {
+          "compute_receipt_count": 0,
+          "counts": {
+            "FP16": 0,
+            "Q4": 6,
+            "Q8": 0,
+            "residual_unfolded": 0
+          },
+          "escalation_count": 0,
+          "repair_tokens": {
+            "FP16": 0,
+            "Q4": 0,
+            "Q8": 0,
+            "residual_unfolded": 0
+          }
+        },
+        "receipts": 1,
+        "repair_attempted": false,
+        "repair_succeeded": false,
+        "repair_tokens_generated": 0,
+        "tokens_at_FP16": 0,
+        "tokens_at_Q4": 6,
+        "tokens_at_Q8": 0,
+        "tokens_at_residual_unfolded": 0,
+        "total_tokens_generated": 6,
+        "verifier_pass": true
+      },
+      "original_verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [],
+        "passed": true
+      },
+      "output": "Explain TSQ with one number. 1 number mock_q4_2 mock_q4_3 mock_q4_4 mock_q4_5",
+      "tension_samples": [
+        {
+          "components": {
+            "entropy": 0.295,
+            "lexical_risk": 0.15,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 0.0
+          },
+          "precision": "Q4",
+          "step": 0,
+          "step_precision": "Q4",
+          "tension": 0.17049999999999998
+        },
+        {
+          "components": {
+            "entropy": 0.37,
+            "lexical_risk": 0.3,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 0.0
+          },
+          "precision": "Q4",
+          "step": 1,
+          "step_precision": "Q4",
+          "tension": 0.253
+        },
+        {
+          "components": {
+            "entropy": 0.44499999999999995,
+            "lexical_risk": 0.3,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 0.0
+          },
+          "precision": "Q4",
+          "step": 2,
+          "step_precision": "Q4",
+          "tension": 0.283
+        },
+        {
+          "components": {
+            "entropy": 0.52,
+            "lexical_risk": 0.6,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 0.0
+          },
+          "precision": "Q4",
+          "step": 3,
+          "step_precision": "Q4",
+          "tension": 0.41800000000000004
+        },
+        {
+          "components": {
+            "entropy": 0.595,
+            "lexical_risk": 0.75,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 0.0
+          },
+          "precision": "Q4",
+          "step": 4,
+          "step_precision": "Q4",
+          "tension": 0.5005
+        },
+        {
+          "components": {
+            "entropy": 0.6699999999999999,
+            "lexical_risk": 0.75,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 0.0
+          },
+          "precision": "Q4",
+          "step": 5,
+          "step_precision": "Q4",
+          "tension": 0.5305
+        }
+      ],
+      "verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [],
+        "passed": true
+      }
+    },
+    "always_Q4": {
+      "metrics": {
+        "cost_model_used": "default_estimated_routing_cost_v0.6",
+        "escalations": 0,
+        "estimated_cost_units": 6.0,
+        "final_verifier_pass": true,
+        "latency": 0.0,
+        "original_verifier_pass": true,
+        "output_length": 44,
+        "precision_histogram": {
+          "compute_receipt_count": 0,
+          "counts": {
+            "FP16": 0,
+            "Q4": 6,
+            "Q8": 0,
+            "residual_unfolded": 0
+          },
+          "escalation_count": 0,
+          "repair_tokens": {
+            "FP16": 0,
+            "Q4": 0,
+            "Q8": 0,
+            "residual_unfolded": 0
+          }
+        },
+        "receipts": 0,
+        "repair_attempted": false,
+        "repair_succeeded": false,
+        "repair_tokens_generated": 0,
+        "tokens_at_FP16": 0,
+        "tokens_at_Q4": 6,
+        "tokens_at_Q8": 0,
+        "tokens_at_residual_unfolded": 0,
+        "total_tokens_generated": 6,
+        "verifier_pass": true
+      },
+      "output": "Explain TSQ with one number. [MOCK_Q4_OUT_6]",
+      "verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [],
+        "passed": true
+      }
+    },
+    "always_Q8": {
+      "metrics": {
+        "cost_model_used": "default_estimated_routing_cost_v0.6",
+        "escalations": 0,
+        "estimated_cost_units": 12.0,
+        "final_verifier_pass": true,
+        "latency": 0.0,
+        "original_verifier_pass": true,
+        "output_length": 44,
+        "precision_histogram": {
+          "compute_receipt_count": 0,
+          "counts": {
+            "FP16": 0,
+            "Q4": 0,
+            "Q8": 6,
+            "residual_unfolded": 0
+          },
+          "escalation_count": 0,
+          "repair_tokens": {
+            "FP16": 0,
+            "Q4": 0,
+            "Q8": 0,
+            "residual_unfolded": 0
+          }
+        },
+        "receipts": 0,
+        "repair_attempted": false,
+        "repair_succeeded": false,
+        "repair_tokens_generated": 0,
+        "tokens_at_FP16": 0,
+        "tokens_at_Q4": 0,
+        "tokens_at_Q8": 6,
+        "tokens_at_residual_unfolded": 0,
+        "total_tokens_generated": 6,
+        "verifier_pass": true
+      },
+      "output": "Explain TSQ with one number. [MOCK_Q8_OUT_6]",
+      "verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [],
+        "passed": true
+      }
+    }
+  },
+  "summary": {
+    "TSQ_dynamic_estimated_cost": 6.0,
+    "always_Q4_estimated_cost": 6.0,
+    "always_Q8_estimated_cost": 12.0,
+    "dynamic_escalations": 0,
+    "dynamic_passed": true,
+    "dynamic_receipts": 1,
+    "dynamic_repaired": false,
+    "dynamic_vs_fp16_cost_ratio": 0.25,
+    "dynamic_vs_q8_cost_ratio": 0.5,
+    "precision_histogram": {
+      "compute_receipt_count": 0,
+      "counts": {
+        "FP16": 0,
+        "Q4": 6,
+        "Q8": 0,
+        "residual_unfolded": 0
+      },
+      "escalation_count": 0,
+      "repair_tokens": {
+        "FP16": 0,
+        "Q4": 0,
+        "Q8": 0,
+        "residual_unfolded": 0
+      }
+    },
+    "q4_passed": true,
+    "q8_passed": true
+  },
+  "tsq_version": "0.6.0"
+}

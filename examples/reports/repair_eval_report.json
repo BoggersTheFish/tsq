@@ -1,0 +1,756 @@
+{
+  "aggregate": {
+    "dynamic_passes": 2,
+    "precision_histogram": {
+      "compute_receipt_count": 3,
+      "counts": {
+        "FP16": 0,
+        "Q4": 4,
+        "Q8": 10,
+        "residual_unfolded": 0
+      },
+      "escalation_count": 3,
+      "repair_tokens": {
+        "FP16": 0,
+        "Q4": 0,
+        "Q8": 10,
+        "residual_unfolded": 0
+      }
+    },
+    "repair_attempts": 3,
+    "repair_successes": 2,
+    "total_compute_receipts": 3,
+    "total_estimated_cost": 24.0,
+    "total_tasks": 3
+  },
+  "backend": "repair-mock",
+  "created_at": "2026-06-18T00:00:00+00:00",
+  "mode": "repair-eval",
+  "model": "repair-mock",
+  "tasks": [
+    {
+      "cognitive_receipts": [
+        {
+          "constraints": [
+            "include 7"
+          ],
+          "created_at": "2026-06-18T00:00:00+00:00",
+          "id": "example-receipt-001",
+          "metadata": {
+            "model": "repair-aware-mock-runner",
+            "precision_histogram": {
+              "compute_receipt_count": 1,
+              "counts": {
+                "FP16": 0,
+                "Q4": 2,
+                "Q8": 1,
+                "residual_unfolded": 0
+              },
+              "escalation_count": 1,
+              "repair_tokens": {
+                "FP16": 0,
+                "Q4": 0,
+                "Q8": 1,
+                "residual_unfolded": 0
+              }
+            },
+            "repair_attempted": true,
+            "repair_succeeded": true,
+            "routing_summary": {
+              "cost_model_used": "default_estimated_routing_cost_v0.6",
+              "escalations": 1,
+              "estimated_cost_units": 4.0
+            },
+            "verifier_checkers": [
+              "constraint_preservation_checker",
+              "no_forbidden_words_checker",
+              "number_date_preservation_checker",
+              "code_fence_closure_checker"
+            ]
+          },
+          "output": "Answer tersely. cheap_q4_0 cheap_q4_1 7",
+          "prompt": "Answer tersely.",
+          "type": "cognitive",
+          "verified_by": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "verifier_result": {
+            "details": {
+              "checkers": [
+                "constraint_preservation_checker",
+                "no_forbidden_words_checker",
+                "number_date_preservation_checker",
+                "code_fence_closure_checker"
+              ],
+              "constraint_count": 1
+            },
+            "failures": [],
+            "passed": true
+          }
+        }
+      ],
+      "compute_receipts": [
+        {
+          "created_at": "2026-06-18T00:00:00+00:00",
+          "from_precision": 4,
+          "id": "example-receipt-002",
+          "metadata": {
+            "chosen_precision": "Q8",
+            "previous_precision": "Q4",
+            "repair_attempted": true,
+            "repair_succeeded": true,
+            "target": "final_generation_output",
+            "tension_components": {
+              "entropy": 0.3,
+              "lexical_risk": 0.44999999999999996,
+              "prompt_tension": 0.0,
+              "verifier_failure_risk": 1.0
+            },
+            "verifier_failures": [
+              "missing number/date from prompt or constraints: 7"
+            ]
+          },
+          "reason": "verification_failed_repair",
+          "target": "final_generation_output",
+          "tension": 0.4775,
+          "to_precision": 8,
+          "type": "compute"
+        }
+      ],
+      "constraints": [
+        "include 7"
+      ],
+      "final_verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [],
+        "passed": true
+      },
+      "name": "missing_number_repair",
+      "original_verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [
+          "missing number/date from prompt or constraints: 7"
+        ],
+        "passed": false
+      },
+      "output": "Answer tersely. cheap_q4_0 cheap_q4_1 7",
+      "prompt": "Answer tersely.",
+      "stats": {
+        "cost_model_used": "default_estimated_routing_cost_v0.6",
+        "escalations": 1,
+        "estimated_cost_units": 4.0,
+        "final_verifier_pass": true,
+        "latency": 0.0,
+        "model": "repair-aware-mock-runner",
+        "original_verifier_pass": false,
+        "output_length": 39,
+        "precision_histogram": {
+          "compute_receipt_count": 1,
+          "counts": {
+            "FP16": 0,
+            "Q4": 2,
+            "Q8": 1,
+            "residual_unfolded": 0
+          },
+          "escalation_count": 1,
+          "repair_tokens": {
+            "FP16": 0,
+            "Q4": 0,
+            "Q8": 1,
+            "residual_unfolded": 0
+          }
+        },
+        "receipts": 2,
+        "repair_attempted": true,
+        "repair_succeeded": true,
+        "repair_tokens_generated": 1,
+        "tokens_at_FP16": 0,
+        "tokens_at_Q4": 2,
+        "tokens_at_Q8": 1,
+        "tokens_at_residual_unfolded": 0,
+        "tokens_generated": 3,
+        "total_tokens_generated": 3,
+        "verifier_pass": true
+      },
+      "tension_samples": [
+        {
+          "components": {
+            "entropy": 0.295,
+            "lexical_risk": 0.0,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 0.0
+          },
+          "precision": "Q4",
+          "step": 0,
+          "step_precision": "Q4",
+          "tension": 0.118
+        },
+        {
+          "components": {
+            "entropy": 0.37,
+            "lexical_risk": 0.3,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 0.0
+          },
+          "precision": "Q4",
+          "step": 1,
+          "step_precision": "Q4",
+          "tension": 0.253
+        },
+        {
+          "components": {
+            "entropy": 0.3,
+            "lexical_risk": 0.44999999999999996,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 1.0
+          },
+          "precision": "Q8",
+          "step": 2,
+          "tension": 0.4775,
+          "verification_failed": true
+        },
+        {
+          "components": {
+            "repair_mode": true
+          },
+          "metadata": {
+            "call_count": 3,
+            "precision": "Q8",
+            "reason": "verification_failure",
+            "repair_mode": true
+          },
+          "precision": "Q8",
+          "repair": true,
+          "step": 2,
+          "step_precision": "Q8",
+          "tension": 0.18
+        }
+      ],
+      "verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [],
+        "passed": true
+      }
+    },
+    {
+      "cognitive_receipts": [],
+      "compute_receipts": [
+        {
+          "created_at": "2026-06-18T00:00:00+00:00",
+          "from_precision": 4,
+          "id": "example-receipt-003",
+          "metadata": {
+            "chosen_precision": "Q8",
+            "previous_precision": "Q4",
+            "repair_attempted": true,
+            "repair_succeeded": false,
+            "target": "final_generation_output",
+            "tension_components": {
+              "entropy": 0.3,
+              "lexical_risk": 0.15,
+              "prompt_tension": 0.0,
+              "verifier_failure_risk": 1.0
+            },
+            "verifier_failures": [
+              "forbidden word present: forbidden"
+            ]
+          },
+          "reason": "verification_failed_repair",
+          "target": "final_generation_output",
+          "tension": 0.3725,
+          "to_precision": 8,
+          "type": "compute"
+        }
+      ],
+      "constraints": [
+        "forbidden words: forbidden"
+      ],
+      "final_verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [
+          "forbidden word present: forbidden"
+        ],
+        "passed": false
+      },
+      "name": "forbidden_word_failure",
+      "original_verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [
+          "forbidden word present: forbidden"
+        ],
+        "passed": false
+      },
+      "output": "Answer tersely. forbidden repair_noop repair_noop repair_noop repair_noop repair_noop repair_noop repair_noop repair_noop",
+      "prompt": "Answer tersely.",
+      "stats": {
+        "cost_model_used": "default_estimated_routing_cost_v0.6",
+        "escalations": 1,
+        "estimated_cost_units": 17.0,
+        "final_verifier_pass": false,
+        "latency": 0.0,
+        "model": "repair-aware-mock-runner",
+        "original_verifier_pass": false,
+        "output_length": 121,
+        "precision_histogram": {
+          "compute_receipt_count": 1,
+          "counts": {
+            "FP16": 0,
+            "Q4": 1,
+            "Q8": 8,
+            "residual_unfolded": 0
+          },
+          "escalation_count": 1,
+          "repair_tokens": {
+            "FP16": 0,
+            "Q4": 0,
+            "Q8": 8,
+            "residual_unfolded": 0
+          }
+        },
+        "receipts": 1,
+        "repair_attempted": true,
+        "repair_succeeded": false,
+        "repair_tokens_generated": 8,
+        "tokens_at_FP16": 0,
+        "tokens_at_Q4": 1,
+        "tokens_at_Q8": 8,
+        "tokens_at_residual_unfolded": 0,
+        "tokens_generated": 9,
+        "total_tokens_generated": 9,
+        "verifier_pass": false
+      },
+      "tension_samples": [
+        {
+          "components": {
+            "entropy": 0.295,
+            "lexical_risk": 0.0,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 0.0
+          },
+          "precision": "Q4",
+          "step": 0,
+          "step_precision": "Q4",
+          "tension": 0.118
+        },
+        {
+          "components": {
+            "entropy": 0.3,
+            "lexical_risk": 0.15,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 1.0
+          },
+          "precision": "Q8",
+          "step": 1,
+          "tension": 0.3725,
+          "verification_failed": true
+        },
+        {
+          "components": {
+            "repair_mode": true
+          },
+          "metadata": {
+            "call_count": 2,
+            "precision": "Q8",
+            "reason": "verification_failure",
+            "repair_mode": true
+          },
+          "precision": "Q8",
+          "repair": true,
+          "step": 1,
+          "step_precision": "Q8",
+          "tension": 0.18
+        },
+        {
+          "components": {
+            "repair_mode": true
+          },
+          "metadata": {
+            "call_count": 3,
+            "precision": "Q8",
+            "reason": "verification_failure",
+            "repair_mode": true
+          },
+          "precision": "Q8",
+          "repair": true,
+          "step": 2,
+          "step_precision": "Q8",
+          "tension": 0.18
+        },
+        {
+          "components": {
+            "repair_mode": true
+          },
+          "metadata": {
+            "call_count": 4,
+            "precision": "Q8",
+            "reason": "verification_failure",
+            "repair_mode": true
+          },
+          "precision": "Q8",
+          "repair": true,
+          "step": 3,
+          "step_precision": "Q8",
+          "tension": 0.18
+        },
+        {
+          "components": {
+            "repair_mode": true
+          },
+          "metadata": {
+            "call_count": 5,
+            "precision": "Q8",
+            "reason": "verification_failure",
+            "repair_mode": true
+          },
+          "precision": "Q8",
+          "repair": true,
+          "step": 4,
+          "step_precision": "Q8",
+          "tension": 0.18
+        },
+        {
+          "components": {
+            "repair_mode": true
+          },
+          "metadata": {
+            "call_count": 6,
+            "precision": "Q8",
+            "reason": "verification_failure",
+            "repair_mode": true
+          },
+          "precision": "Q8",
+          "repair": true,
+          "step": 5,
+          "step_precision": "Q8",
+          "tension": 0.18
+        },
+        {
+          "components": {
+            "repair_mode": true
+          },
+          "metadata": {
+            "call_count": 7,
+            "precision": "Q8",
+            "reason": "verification_failure",
+            "repair_mode": true
+          },
+          "precision": "Q8",
+          "repair": true,
+          "step": 6,
+          "step_precision": "Q8",
+          "tension": 0.18
+        },
+        {
+          "components": {
+            "repair_mode": true
+          },
+          "metadata": {
+            "call_count": 8,
+            "precision": "Q8",
+            "reason": "verification_failure",
+            "repair_mode": true
+          },
+          "precision": "Q8",
+          "repair": true,
+          "step": 7,
+          "step_precision": "Q8",
+          "tension": 0.18
+        },
+        {
+          "components": {
+            "repair_mode": true
+          },
+          "metadata": {
+            "call_count": 9,
+            "precision": "Q8",
+            "reason": "verification_failure",
+            "repair_mode": true
+          },
+          "precision": "Q8",
+          "repair": true,
+          "step": 8,
+          "step_precision": "Q8",
+          "tension": 0.18
+        }
+      ],
+      "verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [
+          "forbidden word present: forbidden"
+        ],
+        "passed": false
+      }
+    },
+    {
+      "cognitive_receipts": [
+        {
+          "constraints": [
+            "include code fence"
+          ],
+          "created_at": "2026-06-18T00:00:00+00:00",
+          "id": "example-receipt-004",
+          "metadata": {
+            "model": "repair-aware-mock-runner",
+            "precision_histogram": {
+              "compute_receipt_count": 1,
+              "counts": {
+                "FP16": 0,
+                "Q4": 1,
+                "Q8": 1,
+                "residual_unfolded": 0
+              },
+              "escalation_count": 1,
+              "repair_tokens": {
+                "FP16": 0,
+                "Q4": 0,
+                "Q8": 1,
+                "residual_unfolded": 0
+              }
+            },
+            "repair_attempted": true,
+            "repair_succeeded": true,
+            "routing_summary": {
+              "cost_model_used": "default_estimated_routing_cost_v0.6",
+              "escalations": 1,
+              "estimated_cost_units": 3.0
+            },
+            "verifier_checkers": [
+              "constraint_preservation_checker",
+              "no_forbidden_words_checker",
+              "number_date_preservation_checker",
+              "code_fence_closure_checker"
+            ]
+          },
+          "output": "Return a tiny code fence. ```python ```",
+          "prompt": "Return a tiny code fence.",
+          "type": "cognitive",
+          "verified_by": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "verifier_result": {
+            "details": {
+              "checkers": [
+                "constraint_preservation_checker",
+                "no_forbidden_words_checker",
+                "number_date_preservation_checker",
+                "code_fence_closure_checker"
+              ],
+              "constraint_count": 1
+            },
+            "failures": [],
+            "passed": true
+          }
+        }
+      ],
+      "compute_receipts": [
+        {
+          "created_at": "2026-06-18T00:00:00+00:00",
+          "from_precision": 4,
+          "id": "example-receipt-005",
+          "metadata": {
+            "chosen_precision": "Q8",
+            "previous_precision": "Q4",
+            "repair_attempted": true,
+            "repair_succeeded": true,
+            "target": "final_generation_output",
+            "tension_components": {
+              "entropy": 0.3,
+              "lexical_risk": 0.3,
+              "prompt_tension": 0.0,
+              "verifier_failure_risk": 1.0
+            },
+            "verifier_failures": [
+              "unclosed code fence"
+            ]
+          },
+          "reason": "verification_failed_repair",
+          "target": "final_generation_output",
+          "tension": 0.425,
+          "to_precision": 8,
+          "type": "compute"
+        }
+      ],
+      "constraints": [
+        "include code fence"
+      ],
+      "final_verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [],
+        "passed": true
+      },
+      "name": "code_fence_closure_repair",
+      "original_verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [
+          "unclosed code fence"
+        ],
+        "passed": false
+      },
+      "output": "Return a tiny code fence. ```python ```",
+      "prompt": "Return a tiny code fence.",
+      "stats": {
+        "cost_model_used": "default_estimated_routing_cost_v0.6",
+        "escalations": 1,
+        "estimated_cost_units": 3.0,
+        "final_verifier_pass": true,
+        "latency": 0.0,
+        "model": "repair-aware-mock-runner",
+        "original_verifier_pass": false,
+        "output_length": 39,
+        "precision_histogram": {
+          "compute_receipt_count": 1,
+          "counts": {
+            "FP16": 0,
+            "Q4": 1,
+            "Q8": 1,
+            "residual_unfolded": 0
+          },
+          "escalation_count": 1,
+          "repair_tokens": {
+            "FP16": 0,
+            "Q4": 0,
+            "Q8": 1,
+            "residual_unfolded": 0
+          }
+        },
+        "receipts": 2,
+        "repair_attempted": true,
+        "repair_succeeded": true,
+        "repair_tokens_generated": 1,
+        "tokens_at_FP16": 0,
+        "tokens_at_Q4": 1,
+        "tokens_at_Q8": 1,
+        "tokens_at_residual_unfolded": 0,
+        "tokens_generated": 2,
+        "total_tokens_generated": 2,
+        "verifier_pass": true
+      },
+      "tension_samples": [
+        {
+          "components": {
+            "entropy": 0.295,
+            "lexical_risk": 0.15,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 0.0
+          },
+          "precision": "Q4",
+          "step": 0,
+          "step_precision": "Q4",
+          "tension": 0.17049999999999998
+        },
+        {
+          "components": {
+            "entropy": 0.3,
+            "lexical_risk": 0.3,
+            "prompt_tension": 0.0,
+            "verifier_failure_risk": 1.0
+          },
+          "precision": "Q8",
+          "step": 1,
+          "tension": 0.425,
+          "verification_failed": true
+        },
+        {
+          "components": {
+            "repair_mode": true
+          },
+          "metadata": {
+            "call_count": 2,
+            "precision": "Q8",
+            "reason": "verification_failure",
+            "repair_mode": true
+          },
+          "precision": "Q8",
+          "repair": true,
+          "step": 1,
+          "step_precision": "Q8",
+          "tension": 0.18
+        }
+      ],
+      "verification": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [],
+        "passed": true
+      }
+    }
+  ],
+  "tsq_version": "0.6.0"
+}

@@ -49,15 +49,22 @@ class PrecisionRouter:
         """
         tension = tension_result["tension"]
         components = tension_result["components"]
+        previous_precision = self.current_precision
 
         if force_escalate or self.previous_failure or tension >= self.high:
             new_precision: PrecisionLevel = "FP16" if tension > 0.9 else "Q8"
             receipt = make_compute_receipt(
                 reason="high_tension_or_verifier_failure",
                 target="current_generation_span",
-                from_precision=self._level_to_bits(self.current_precision),
+                from_precision=self._level_to_bits(previous_precision),
                 to_precision=self._level_to_bits(new_precision),
                 tension=tension,
+                metadata={
+                    "tension_components": dict(components),
+                    "chosen_precision": new_precision,
+                    "previous_precision": previous_precision,
+                    "target": "current_generation_span",
+                },
             )
             self.escalation_history.append(receipt)
             self.current_precision = new_precision
@@ -70,9 +77,15 @@ class PrecisionRouter:
                 receipt = make_compute_receipt(
                     reason="medium_tension",
                     target="current_generation_span",
-                    from_precision=self._level_to_bits(self.current_precision),
+                    from_precision=self._level_to_bits(previous_precision),
                     to_precision=8,
                     tension=tension,
+                    metadata={
+                        "tension_components": dict(components),
+                        "chosen_precision": new_precision,
+                        "previous_precision": previous_precision,
+                        "target": "current_generation_span",
+                    },
                 )
                 self.escalation_history.append(receipt)
                 self.current_precision = new_precision

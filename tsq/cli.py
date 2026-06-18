@@ -8,10 +8,11 @@ import argparse
 import sys
 from typing import Sequence
 
-from .evals.harness import compare_baselines, repair_eval_tasks
+from .evals.harness import compare_baselines, repair_eval_tasks, run_eval_suite
 from .receipts.store import ReceiptStore
 from .reports import (
     build_eval_report,
+    build_eval_suite_report,
     build_generation_report,
     build_repair_eval_report,
     write_json_report,
@@ -57,6 +58,13 @@ def _build_backend(args: argparse.Namespace):
         raise CliError(f"{exc}\nInstall optional dependencies with: pip install -e '.[transformers]'") from exc
 
 
+def _backend_factory(args: argparse.Namespace):
+    def factory():
+        return _build_backend(args)
+
+    return factory
+
+
 def _constraints(args: argparse.Namespace) -> list[str]:
     return list(args.constraint or [])
 
@@ -87,20 +95,31 @@ def _cmd_generate(args: argparse.Namespace) -> int:
 
 
 def _cmd_eval(args: argparse.Namespace) -> int:
-    runner = _build_backend(args)
     constraints = _constraints(args)
     results = compare_baselines(
         prompt=args.prompt,
         constraints=constraints,
         max_new_tokens=args.max_new_tokens,
-        model=runner,
+        backend_factory=_backend_factory(args),
     )
     report = build_eval_report(
         results=results,
         backend=args.backend,
         prompt=args.prompt,
         constraints=constraints,
-        model_name=getattr(runner, "name", runner.__class__.__name__),
+        model_name=args.model_id or args.backend,
+    )
+    write_json_report(args.report, report)
+    print(f"wrote report: {args.report}")
+    return 0
+
+
+def _cmd_eval_suite(args: argparse.Namespace) -> int:
+    suite_result = run_eval_suite(backend_factory=_backend_factory(args))
+    report = build_eval_suite_report(
+        suite_result=suite_result,
+        backend=args.backend,
+        model_name=args.model_id or args.backend,
     )
     write_json_report(args.report, report)
     print(f"wrote report: {args.report}")
@@ -168,6 +187,11 @@ def build_parser() -> argparse.ArgumentParser:
     repair_eval.add_argument("--report", required=True)
     _add_common_backend_args(repair_eval, default_backend="repair-mock")
     repair_eval.set_defaults(func=_cmd_repair_eval)
+
+    eval_suite = subparsers.add_parser("eval-suite", help="run built-in v0.6 eval suite")
+    eval_suite.add_argument("--report", required=True)
+    _add_common_backend_args(eval_suite, default_backend="repair-mock")
+    eval_suite.set_defaults(func=_cmd_eval_suite)
 
     return parser
 

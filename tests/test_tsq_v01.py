@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from tsq.cli import main as cli_main
-from tsq.evals.harness import compare_baselines
+from tsq.evals.harness import compare_baselines, run_eval_suite
 from tsq.receipts.schema import make_cognitive_receipt
 from tsq.receipts.store import ReceiptStore
 from tsq.reports import build_generation_report, to_jsonable
@@ -67,6 +67,32 @@ class RepairTokenRunner:
 
     def generate(self, prompt, max_new_tokens=64, precision="Q4", **kwargs):
         return prompt
+
+
+class IsolatedRunner:
+    instances = []
+    name = "isolated-runner"
+
+    def __init__(self):
+        self.step_calls = 0
+        self.generate_calls = 0
+        self.precisions = []
+        IsolatedRunner.instances.append(self)
+
+    def step(self, precision="Q4", **kwargs):
+        self.step_calls += 1
+        self.precisions.append(precision)
+        return StepResult(
+            token_text="7",
+            entropy_proxy=0.2,
+            precision=precision,
+            metadata={"step_calls": self.step_calls},
+        )
+
+    def generate(self, prompt, max_new_tokens=64, precision="Q4", **kwargs):
+        self.generate_calls += 1
+        self.precisions.append(precision)
+        return prompt + " 7"
 
 
 def test_scanner_returns_bounded_tension():
@@ -262,7 +288,72 @@ def test_eval_harness_returns_all_three_baselines():
         "repair_attempted",
         "repair_succeeded",
         "output_length",
+        "tokens_at_Q4",
+        "tokens_at_Q8",
+        "tokens_at_FP16",
+        "tokens_at_residual_unfolded",
+        "repair_tokens_generated",
+        "total_tokens_generated",
+        "estimated_cost_units",
+        "cost_model_used",
+        "precision_histogram",
     }
+
+
+def test_compare_baselines_uses_fresh_runner_instances():
+    IsolatedRunner.instances = []
+    results = compare_baselines(
+        prompt="Answer with 7.",
+        constraints=["include 7"],
+        max_new_tokens=2,
+        backend_factory=IsolatedRunner,
+    )
+    assert set(results) == {"always_Q4", "always_Q8", "TSQ_dynamic"}
+    assert len(IsolatedRunner.instances) == 3
+    q4_runner, q8_runner, dynamic_runner = IsolatedRunner.instances
+    assert q4_runner.generate_calls == 1
+    assert q8_runner.generate_calls == 1
+    assert dynamic_runner.step_calls == 2
+    assert q4_runner is not q8_runner
+    assert q8_runner is not dynamic_runner
+
+
+def test_generation_cost_accounting_and_precision_histogram():
+    result = run_tsq_generation(
+        prompt="Must include one number 7 exactly.",
+        constraints=["include 7"],
+        max_new_tokens=10,
+        model=MockModelRunner(),
+    )
+    stats = result["stats"]
+    assert stats["tokens_at_Q4"] >= 1
+    assert stats["tokens_at_Q8"] >= 1
+    assert stats["tokens_at_FP16"] == 0
+    assert stats["total_tokens_generated"] == stats["tokens_generated"]
+    expected = stats["tokens_at_Q4"] + (stats["tokens_at_Q8"] * 2.0)
+    expected += stats["tokens_at_FP16"] * 4.0
+    expected += stats["tokens_at_residual_unfolded"] * 4.0
+    assert stats["estimated_cost_units"] == expected
+    histogram = stats["precision_histogram"]
+    assert histogram["counts"]["Q4"] == stats["tokens_at_Q4"]
+    assert histogram["counts"]["Q8"] == stats["tokens_at_Q8"]
+    assert histogram["compute_receipt_count"] == len(result["compute_receipts"])
+
+
+def test_compute_receipt_metadata_contains_tension_and_verifier_context():
+    result = run_tsq_generation(
+        prompt="Respond briefly.",
+        constraints=["include checksum"],
+        max_new_tokens=1,
+        model=RepairTokenRunner(),
+    )
+    receipt = result["compute_receipts"][0]
+    assert "tension_components" in receipt.metadata
+    assert "verifier_failures" in receipt.metadata
+    assert receipt.metadata["chosen_precision"] == "Q8"
+    assert receipt.metadata["target"] == "final_generation_output"
+    assert receipt.metadata["repair_attempted"] is True
+    assert receipt.metadata["repair_succeeded"] is True
 
 
 def test_report_serialization_handles_receipts_and_verifier_results():
@@ -282,6 +373,7 @@ def test_report_serialization_handles_receipts_and_verifier_results():
     encoded = json.dumps(report)
     decoded = json.loads(encoded)
     assert decoded["verification"]["passed"] is True
+    assert decoded["precision_histogram"]["compute_receipt_count"] == 1
     assert decoded["compute_receipts"][0]["type"] == "compute"
     assert to_jsonable(StepResult("x", 0.2, "Q4", {"source": "test"}))["metadata"]["source"] == "test"
 
@@ -347,6 +439,28 @@ def test_cli_repair_eval_writes_aggregate_metrics(tmp_path):
     assert payload["aggregate"]["total_tasks"] == 3
     assert payload["aggregate"]["repair_attempts"] >= 1
     assert payload["aggregate"]["total_compute_receipts"] >= 1
+    assert "precision_histogram" in payload["aggregate"]
+
+
+def test_cli_eval_suite_writes_valid_report(tmp_path):
+    report = tmp_path / "eval_suite_report.json"
+    code = cli_main(["eval-suite", "--backend", "repair-mock", "--report", str(report)])
+    assert code == 0
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert payload["mode"] == "eval-suite"
+    assert payload["aggregate"]["total_tasks"] == 12
+    assert "mean_dynamic_vs_q8_cost_ratio" in payload["aggregate"]
+    assert "precision_histogram" in payload["aggregate"]
+
+
+def test_run_eval_suite_aggregate_contains_costs():
+    suite = run_eval_suite(backend_factory=RepairAwareMockRunner)
+    assert suite["aggregate"]["total_tasks"] == 12
+    assert suite["aggregate"]["mean_dynamic_estimated_cost"] > 0
+
+
+def test_ci_workflow_exists():
+    assert Path(".github/workflows/ci.yml").exists()
 
 
 def test_cli_transformers_backend_missing_model_or_dependencies_is_clear(tmp_path, capsys):

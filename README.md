@@ -13,7 +13,7 @@ TSQ treats inference compute as a *structural* problem: precision should follow 
 
 This is the **inference/runtime layer** complement to [TensionLM](https://github.com/BoggersTheFish/TensionLM) (the model architecture layer using sigmoid tension attention).
 
-**Status**: v0.5 — CLI runner and reproducible eval reports. TSQ can now run generation, baseline comparison, and repair evals from the terminal while persisting JSON reports and receipts.
+**Status**: v0.6 — Eval integrity, cost accounting, and CI. TSQ now isolates baseline runs, tracks estimated routing cost by precision level, emits stronger reports, includes built-in eval suites, and runs mock-only CI.
 Mock/backend-runtime demo + full test suite pass. Optional Transformers support, verifier-gated repair, backend-owned token generation, and receipts remain active.
 Still cheap-first: only entropy proxy + lexical risk + verifier failure in the hot path.
 No custom quantization implemented yet.
@@ -22,7 +22,7 @@ No custom quantization implemented yet.
 > Precision should follow unresolved tension.  
 > High precision is an *exception handler*, not the default mode.
 
-The architecture roadmap lives in this README for v0.5; deeper design notes can be added under `docs/` as the runtime grows.
+The architecture roadmap lives in this README for the current wave; deeper design notes can be added under `docs/` as the runtime grows.
 
 ## Quick Start
 ```bash
@@ -71,6 +71,13 @@ python -m tsq.cli repair-eval \
   --report artifacts/repair_eval_report.json
 ```
 
+Built-in v0.6 eval suite:
+```bash
+python -m tsq.cli eval-suite \
+  --backend repair-mock \
+  --report artifacts/eval_suite_report.json
+```
+
 Optional Transformers backend:
 ```bash
 pip install -e '.[transformers]'
@@ -83,6 +90,27 @@ python -m tsq.cli generate \
 ```
 
 Precision labels are routing labels unless mapped to distinct backend models with `--q4-model`, `--q8-model`, and `--fp16-model`.
+
+## Evidence
+
+Run the built-in suite:
+```bash
+python -m tsq.cli eval-suite --backend repair-mock --report artifacts/eval_suite_report.json
+```
+
+Example reports live under `examples/reports/`.
+
+The core v0.6 metrics are:
+
+- verifier pass rates for `always_Q4`, `always_Q8`, and `TSQ_dynamic`
+- `estimated_cost_units`
+- `dynamic_vs_q8_cost_ratio`
+- precision histograms, including repair-token counts
+- compute receipts explaining why routing escalated
+
+Cost is estimated routing cost, not measured GPU energy. The default model is Q4 = 1.0, Q8 = 2.0, FP16 = 4.0, and residual unfolding = 4.0.
+
+Current limitations remain explicit: no native TSQ quantization yet, no fine-tuned TSQ model yet, and precision labels are routing labels unless mapped to distinct backend model variants. Default CI is mock-only.
 
 ## Repo Structure
 ```
@@ -105,10 +133,12 @@ tsq/
 - **Routing** → tension propagation → activation of higher-resolution "structures" (precision levels as resolution nodes).
 - Every component declares explicit **TS headers** (nodes, tension sources, verifier hooks, receipt outputs).
 
-**Wave Goal**: v0.5 makes TSQ runnable as a reproducible command-line experiment tool.
-Any compliant ModelRunner can be dropped in. The system demonstrates verifier-gated dynamic precision with bounded repair passes and persistent, inspectable receipts while keeping the hot path strictly cheap.
+**Wave Goal**: v0.6 makes TSQ more credible as a reproducible experiment runtime.
+Any compliant ModelRunner can be dropped in. The system demonstrates verifier-gated dynamic precision with bounded repair passes, isolated baseline comparisons, estimated routing-cost accounting, persistent receipts, and inspectable reports while keeping the hot path strictly cheap.
 See `docs/transformers_backend.md` for the optional real-model adapter.
 See `docs/reports.md` for report schemas and interpretation.
+See `docs/evals.md` for eval suite fixtures.
+See `docs/cost_accounting.md` for routing-cost semantics.
 
 ---
 

@@ -1,0 +1,242 @@
+{
+  "backend": "mock",
+  "cognitive_receipts": [
+    {
+      "constraints": [
+        "include one number"
+      ],
+      "created_at": "2026-06-18T00:00:00+00:00",
+      "id": "example-receipt-001",
+      "metadata": {
+        "model": "mock-tensionlm-117m-q4q8",
+        "precision_histogram": {
+          "compute_receipt_count": 0,
+          "counts": {
+            "FP16": 0,
+            "Q4": 6,
+            "Q8": 0,
+            "residual_unfolded": 0
+          },
+          "escalation_count": 0,
+          "repair_tokens": {
+            "FP16": 0,
+            "Q4": 0,
+            "Q8": 0,
+            "residual_unfolded": 0
+          }
+        },
+        "repair_attempted": false,
+        "repair_succeeded": false,
+        "routing_summary": {
+          "cost_model_used": "default_estimated_routing_cost_v0.6",
+          "escalations": 0,
+          "estimated_cost_units": 6.0
+        },
+        "verifier_checkers": [
+          "constraint_preservation_checker",
+          "no_forbidden_words_checker",
+          "number_date_preservation_checker",
+          "code_fence_closure_checker"
+        ]
+      },
+      "output": "Brainstorm TSQ. Must include one number. 1 number mock_q4_2 mock_q4_3 mock_q4_4 mock_q4_5",
+      "prompt": "Brainstorm TSQ. Must include one number.",
+      "type": "cognitive",
+      "verified_by": [
+        "constraint_preservation_checker",
+        "no_forbidden_words_checker",
+        "number_date_preservation_checker",
+        "code_fence_closure_checker"
+      ],
+      "verifier_result": {
+        "details": {
+          "checkers": [
+            "constraint_preservation_checker",
+            "no_forbidden_words_checker",
+            "number_date_preservation_checker",
+            "code_fence_closure_checker"
+          ],
+          "constraint_count": 1
+        },
+        "failures": [],
+        "passed": true
+      }
+    }
+  ],
+  "compute_receipts": [],
+  "constraints": [
+    "include one number"
+  ],
+  "created_at": "2026-06-18T00:00:00+00:00",
+  "final_verification": {
+    "details": {
+      "checkers": [
+        "constraint_preservation_checker",
+        "no_forbidden_words_checker",
+        "number_date_preservation_checker",
+        "code_fence_closure_checker"
+      ],
+      "constraint_count": 1
+    },
+    "failures": [],
+    "passed": true
+  },
+  "mode": "generate",
+  "model": "mock-tensionlm-117m-q4q8",
+  "original_verification": {
+    "details": {
+      "checkers": [
+        "constraint_preservation_checker",
+        "no_forbidden_words_checker",
+        "number_date_preservation_checker",
+        "code_fence_closure_checker"
+      ],
+      "constraint_count": 1
+    },
+    "failures": [],
+    "passed": true
+  },
+  "output": "Brainstorm TSQ. Must include one number. 1 number mock_q4_2 mock_q4_3 mock_q4_4 mock_q4_5",
+  "precision_histogram": {
+    "compute_receipt_count": 0,
+    "counts": {
+      "FP16": 0,
+      "Q4": 6,
+      "Q8": 0,
+      "residual_unfolded": 0
+    },
+    "escalation_count": 0,
+    "repair_tokens": {
+      "FP16": 0,
+      "Q4": 0,
+      "Q8": 0,
+      "residual_unfolded": 0
+    }
+  },
+  "prompt": "Brainstorm TSQ. Must include one number.",
+  "stats": {
+    "cost_model_used": "default_estimated_routing_cost_v0.6",
+    "escalations": 0,
+    "estimated_cost_units": 6.0,
+    "final_verifier_pass": true,
+    "latency": 0.0,
+    "model": "mock-tensionlm-117m-q4q8",
+    "original_verifier_pass": true,
+    "output_length": 89,
+    "precision_histogram": {
+      "compute_receipt_count": 0,
+      "counts": {
+        "FP16": 0,
+        "Q4": 6,
+        "Q8": 0,
+        "residual_unfolded": 0
+      },
+      "escalation_count": 0,
+      "repair_tokens": {
+        "FP16": 0,
+        "Q4": 0,
+        "Q8": 0,
+        "residual_unfolded": 0
+      }
+    },
+    "receipts": 1,
+    "repair_attempted": false,
+    "repair_succeeded": false,
+    "repair_tokens_generated": 0,
+    "tokens_at_FP16": 0,
+    "tokens_at_Q4": 6,
+    "tokens_at_Q8": 0,
+    "tokens_at_residual_unfolded": 0,
+    "tokens_generated": 6,
+    "total_tokens_generated": 6,
+    "verifier_pass": true
+  },
+  "tension_samples": [
+    {
+      "components": {
+        "entropy": 0.295,
+        "lexical_risk": 0.3,
+        "prompt_tension": 0.0,
+        "verifier_failure_risk": 0.0
+      },
+      "precision": "Q4",
+      "step": 0,
+      "step_precision": "Q4",
+      "tension": 0.22299999999999998
+    },
+    {
+      "components": {
+        "entropy": 0.37,
+        "lexical_risk": 0.44999999999999996,
+        "prompt_tension": 0.0,
+        "verifier_failure_risk": 0.0
+      },
+      "precision": "Q4",
+      "step": 1,
+      "step_precision": "Q4",
+      "tension": 0.3055
+    },
+    {
+      "components": {
+        "entropy": 0.44499999999999995,
+        "lexical_risk": 0.44999999999999996,
+        "prompt_tension": 0.0,
+        "verifier_failure_risk": 0.0
+      },
+      "precision": "Q4",
+      "step": 2,
+      "step_precision": "Q4",
+      "tension": 0.33549999999999996
+    },
+    {
+      "components": {
+        "entropy": 0.52,
+        "lexical_risk": 0.75,
+        "prompt_tension": 0.0,
+        "verifier_failure_risk": 0.0
+      },
+      "precision": "Q4",
+      "step": 3,
+      "step_precision": "Q4",
+      "tension": 0.4705
+    },
+    {
+      "components": {
+        "entropy": 0.595,
+        "lexical_risk": 0.9,
+        "prompt_tension": 0.0,
+        "verifier_failure_risk": 0.0
+      },
+      "precision": "Q4",
+      "step": 4,
+      "step_precision": "Q4",
+      "tension": 0.5529999999999999
+    },
+    {
+      "components": {
+        "entropy": 0.6699999999999999,
+        "lexical_risk": 0.9,
+        "prompt_tension": 0.0,
+        "verifier_failure_risk": 0.0
+      },
+      "precision": "Q4",
+      "step": 5,
+      "step_precision": "Q4",
+      "tension": 0.583
+    }
+  ],
+  "tsq_version": "0.6.0",
+  "verification": {
+    "details": {
+      "checkers": [
+        "constraint_preservation_checker",
+        "no_forbidden_words_checker",
+        "number_date_preservation_checker",
+        "code_fence_closure_checker"
+      ],
+      "constraint_count": 1
+    },
+    "failures": [],
+    "passed": true
+  }
+}

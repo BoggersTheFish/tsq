@@ -1,6 +1,6 @@
 # TSQ Reports
 
-TSQ v0.5 writes reproducible JSON reports from the CLI. Reports are plain JSON and do not contain Python objects.
+TSQ writes reproducible JSON reports from the CLI. Reports are plain JSON and do not contain Python objects.
 
 ## Example Commands
 
@@ -35,6 +35,14 @@ python -m tsq.cli repair-eval \
   --report artifacts/repair_eval_report.json
 ```
 
+Built-in eval suite:
+
+```bash
+python -m tsq.cli eval-suite \
+  --backend repair-mock \
+  --report artifacts/eval_suite_report.json
+```
+
 ## Generation Report
 
 `generate` reports include:
@@ -52,10 +60,21 @@ python -m tsq.cli repair-eval \
 - `cognitive_receipts`
 - `compute_receipts`
 - `tension_samples`
+- `precision_histogram`
 - `tsq_version`
 - `created_at`
 
 Receipts and verifier results are serialized as dictionaries. Dataclasses are converted before JSON is written.
+
+`stats` also includes routing-cost fields:
+
+- `tokens_at_Q4`
+- `tokens_at_Q8`
+- `tokens_at_FP16`
+- `tokens_at_residual_unfolded`
+- `total_tokens_generated`
+- `estimated_cost_units`
+- `cost_model_used`
 
 ## Eval Report
 
@@ -69,6 +88,12 @@ The compact `summary` contains:
 - `q4_passed`
 - `q8_passed`
 - `dynamic_receipts`
+- `always_Q4_estimated_cost`
+- `always_Q8_estimated_cost`
+- `TSQ_dynamic_estimated_cost`
+- `dynamic_vs_q8_cost_ratio`
+- `dynamic_vs_fp16_cost_ratio`
+- `precision_histogram`
 
 Interpretation:
 
@@ -76,7 +101,22 @@ Interpretation:
 - `TSQ_dynamic` uses the live generation loop with tension scanning, precision routing, verification, repair, and receipts.
 - A dynamic run can fail initially, repair, and still finish with `final_verifier_pass: true`.
 
-Precision labels are routing labels unless they are mapped to distinct backend model variants. TSQ v0.5 does not implement native TSQ quantization.
+Precision labels are routing labels unless they are mapped to distinct backend model variants. TSQ does not implement native TSQ quantization yet.
+
+## Precision Histogram
+
+Reports include a compact precision histogram:
+
+```json
+{
+  "counts": {"Q4": 4, "Q8": 2, "FP16": 0, "residual_unfolded": 0},
+  "repair_tokens": {"Q4": 0, "Q8": 1, "FP16": 0, "residual_unfolded": 0},
+  "escalation_count": 1,
+  "compute_receipt_count": 1
+}
+```
+
+`counts` is based on the backend-owned `StepResult.precision` for generated tokens. `repair_tokens` is a subset showing how many generated tokens happened during repair mode.
 
 ## Repair Eval Report
 
@@ -88,10 +128,28 @@ Precision labels are routing labels unless they are mapped to distinct backend m
 - `aggregate.repair_attempts`
 - `aggregate.repair_successes`
 - `aggregate.total_compute_receipts`
+- `aggregate.total_estimated_cost`
+- `aggregate.precision_histogram`
+
+## Eval Suite Report
+
+`eval-suite` runs the built-in v0.6 fixture list and writes:
+
+- `tasks`: per-task baseline comparison results plus task metadata
+- `aggregate.total_tasks`
+- `aggregate.q4_passes`
+- `aggregate.q8_passes`
+- `aggregate.dynamic_passes`
+- `aggregate.dynamic_repairs_attempted`
+- `aggregate.dynamic_repairs_succeeded`
+- `aggregate.total_dynamic_compute_receipts`
+- `aggregate.mean_dynamic_vs_q8_cost_ratio`
+- `aggregate.mean_dynamic_estimated_cost`
+- `aggregate.precision_histogram`
 
 ## Inspecting Compute Receipts
 
-Compute receipts explain why extra work was spent. In v0.5 the common repair receipt reason is:
+Compute receipts explain why extra work was spent. The common repair receipt reason is:
 
 ```json
 "reason": "verification_failed_repair"

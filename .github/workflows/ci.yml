@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+
+      - name: Run tests
+        run: python -m pytest
+
+      - name: CLI smoke tests
+        run: |
+          mkdir -p artifacts/ci
+          python -m tsq.cli generate \
+            --prompt "Brainstorm TSQ. Must include one number." \
+            --constraint "include one number" \
+            --max-new-tokens 6 \
+            --backend mock \
+            --report artifacts/ci/generate.json
+          python -m tsq.cli eval \
+            --prompt "Explain TSQ with one number." \
+            --constraint "include one number" \
+            --max-new-tokens 6 \
+            --backend mock \
+            --report artifacts/ci/eval.json
+          python -m tsq.cli repair-eval \
+            --backend repair-mock \
+            --report artifacts/ci/repair_eval.json
+          python -m tsq.cli eval-suite \
+            --backend repair-mock \
+            --report artifacts/ci/eval_suite.json
+
+      - name: Whitespace check
+        run: git diff --check

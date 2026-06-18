@@ -4,7 +4,7 @@ Type: runtime_abstraction
 Description: Protocol + implementations for pluggable model backends.
              Allows the TSQ loop to remain model-agnostic while supporting
              mock (for dev) and real quantized models (Transformers, llama.cpp, etc.).
-             v0.5: CLI/report-ready backends with verifier-gated repair.
+             Current wave: CLI/report-ready backends with verifier-gated repair.
 Tension sources: none in the runner itself (tension lives in scanner + router)
 Edges:
   - runner.step(precision) → produces logits-like object with entropy_proxy

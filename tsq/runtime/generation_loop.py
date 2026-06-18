@@ -16,6 +16,14 @@ from ..receipts.schema import (
 from ..receipts.store import ReceiptStore
 from ..tension.scanner import scan_recent_window
 from ..verifier.base import Verifier
+from .costing import (
+    DEFAULT_COST_MODEL_NAME,
+    build_precision_histogram,
+    empty_precision_counts,
+    estimate_cost_units,
+    increment_precision,
+    precision_count_stats,
+)
 from .model_runner import MockModelRunner, ModelRunner
 from .precision_router import PrecisionRouter
 
@@ -41,6 +49,8 @@ def run_tsq_generation(
     tension_samples: List[Dict[str, Any]] = []
     cognitive_receipts: List[CognitiveReceipt] = []
     compute_receipts: List[ComputeReceipt] = []
+    precision_counts = empty_precision_counts()
+    repair_precision_counts = empty_precision_counts()
     repair_attempted = False
     repair_succeeded = False
     repair_tokens_generated = 0
@@ -60,10 +70,20 @@ def run_tsq_generation(
         )
         precision, compute_receipt = router.decide(tension)
         if compute_receipt is not None:
+            compute_receipt.metadata.update(
+                {
+                    "step": index,
+                    "tension_components": dict(tension["components"]),
+                    "chosen_precision": precision,
+                    "previous_precision": step_result.precision,
+                    "target": compute_receipt.target,
+                }
+            )
             compute_receipts.append(compute_receipt)
             if receipt_store is not None:
                 receipt_store.append(compute_receipt)
         generated.append(step_result.token_text)
+        increment_precision(precision_counts, step_result.precision)
         tension_samples.append(
             {
                 "step": index,
@@ -89,16 +109,29 @@ def run_tsq_generation(
                 from_precision=4,
                 to_precision=8,
                 tension=tension["tension"],
+                metadata={
+                    "tension_components": dict(tension["components"]),
+                    "verifier_failures": list(original_verification.failures),
+                    "chosen_precision": precision,
+                    "previous_precision": "Q4",
+                    "target": "final_generation_output",
+                    "repair_attempted": bool(repair_on_failure and repair_max_tokens > 0),
+                },
             )
         else:
             compute_receipt.reason = "verification_failed_repair"
             compute_receipt.target = "final_generation_output"
             compute_receipt.metadata.update(
-                {"verification_failures": list(original_verification.failures)}
+                {
+                    "tension_components": dict(tension["components"]),
+                    "verifier_failures": list(original_verification.failures),
+                    "chosen_precision": precision,
+                    "previous_precision": compute_receipt.metadata.get("previous_precision", "Q4"),
+                    "target": "final_generation_output",
+                    "repair_attempted": bool(repair_on_failure and repair_max_tokens > 0),
+                }
             )
         compute_receipts.append(compute_receipt)
-        if receipt_store is not None:
-            receipt_store.append(compute_receipt)
         tension_samples.append(
             {
                 "step": len(generated),
@@ -122,6 +155,8 @@ def run_tsq_generation(
                     current_output=output,
                 )
                 generated.append(step_result.token_text)
+                increment_precision(precision_counts, step_result.precision)
+                increment_precision(repair_precision_counts, step_result.precision)
                 repair_tokens_generated += 1
                 output = " ".join([prompt.strip(), *generated]).strip()
                 tension_samples.append(
@@ -146,6 +181,16 @@ def run_tsq_generation(
         else:
             final_verification = original_verification
 
+        compute_receipt.metadata["repair_succeeded"] = repair_succeeded
+        if receipt_store is not None:
+            receipt_store.append(compute_receipt)
+
+    precision_histogram = build_precision_histogram(
+        precision_counts,
+        repair_tokens_by_precision=repair_precision_counts,
+        escalation_count=len(compute_receipts),
+        compute_receipt_count=len(compute_receipts),
+    )
     if final_verification.passed:
         cognitive_receipt = make_cognitive_receipt(
             prompt=prompt,
@@ -155,8 +200,15 @@ def run_tsq_generation(
             verifier_result=final_verification.to_dict(),
             metadata={
                 "model": getattr(runner, "name", runner.__class__.__name__),
+                "verifier_checkers": final_verification.details.get("checkers", []),
                 "repair_attempted": repair_attempted,
                 "repair_succeeded": repair_succeeded,
+                "precision_histogram": precision_histogram,
+                "routing_summary": {
+                    "escalations": len(compute_receipts),
+                    "estimated_cost_units": estimate_cost_units(precision_counts),
+                    "cost_model_used": DEFAULT_COST_MODEL_NAME,
+                },
             },
         )
         cognitive_receipts.append(cognitive_receipt)
@@ -164,6 +216,13 @@ def run_tsq_generation(
             receipt_store.append(cognitive_receipt)
 
     latency = perf_counter() - start
+    cost_stats = {
+        **precision_count_stats(precision_counts),
+        "total_tokens_generated": len(generated),
+        "estimated_cost_units": estimate_cost_units(precision_counts),
+        "cost_model_used": DEFAULT_COST_MODEL_NAME,
+        "precision_histogram": precision_histogram,
+    }
     return {
         "output": output,
         "stats": {
@@ -179,6 +238,7 @@ def run_tsq_generation(
             "output_length": len(output),
             "model": getattr(runner, "name", runner.__class__.__name__),
             "tokens_generated": len(generated),
+            **cost_stats,
         },
         "cognitive_receipts": cognitive_receipts,
         "compute_receipts": compute_receipts,
