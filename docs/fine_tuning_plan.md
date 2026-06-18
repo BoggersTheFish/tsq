@@ -1,10 +1,10 @@
 # TSQ Fine-Tuning Plan
 
-v0.7 is data preparation only. It creates schemas, deterministic JSONL generation, validation tools, and a dry-run training script scaffold. It does not run a heavy training job and does not publish a fine-tuned TSQ model.
+v0.8 provides the first executable LoRA/QLoRA fine-tuning path. It wires dataset loading, formatting, tokenization, PEFT LoRA configuration, Trainer execution, adapter saving, and adapter evaluation through TSQ.
 
-## v0.8 Target
+The seed datasets are intentionally small. They prove the loop; they do not by themselves justify a strong quality claim.
 
-The next wave should run a small LoRA or QLoRA fine-tune using the v0.7 datasets.
+## Recommended First Runs
 
 Recommended small base models for the first pass:
 
@@ -22,7 +22,7 @@ Initial training should use:
 - repair-from-verifier-feedback examples
 - optionally preference pairs after a DPO or preference trainer is added
 
-The dry-run scaffold is:
+Dry-run:
 
 ```bash
 python scripts/train_lora.py \
@@ -34,15 +34,18 @@ python scripts/train_lora.py \
 ```
 
 Real training will require optional dependencies: `torch`, `transformers`, `datasets`, `peft`, and `accelerate`.
+QLoRA flags also require `bitsandbytes`.
 
 ## Evaluation Through TSQ
 
-The fine-tuned model should be evaluated by plugging it into TSQ as a backend model variant and running:
+The fine-tuned adapter should be evaluated by plugging it into TSQ as an adapter-aware Transformers backend and running:
 
 - `eval-suite`
 - repair evals
 - cost-accounting reports
 - verifier pass-rate comparisons against the base model
+
+Use `scripts/eval_lora.py` for base-vs-adapter reports, or pass `--adapter-dir` directly to the TSQ CLI Transformers backend.
 
 ## Success Criteria
 

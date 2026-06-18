@@ -1,6 +1,6 @@
 # TSQ Training Data
 
-TSQ v0.7 creates small deterministic JSONL datasets from eval tasks, verifier outcomes, repair traces, and example report metadata.
+TSQ creates small deterministic JSONL datasets from eval tasks, verifier outcomes, repair traces, and example report metadata.
 
 ## Dataset Files
 
@@ -106,4 +106,4 @@ Preference pairs are generated for repaired examples:
 - `chosen_output`: repaired verifier-passing output
 - `reason`: verifier failure repaired into constraint satisfaction
 
-This prepares a later DPO-style or preference fine-tuning wave without implementing DPO in v0.7.
+This prepares a later DPO-style or preference fine-tuning wave. v0.8 focuses on supervised and repair LoRA training, not DPO.

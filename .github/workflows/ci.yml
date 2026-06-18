@@ -58,6 +58,11 @@ jobs:
             --eval-jsonl artifacts/ci/data/tsq_supervised_eval.jsonl \
             --output-dir artifacts/ci/lora \
             --dry-run
+          python scripts/eval_lora.py \
+            --model-id dry-run-model \
+            --adapter-dir artifacts/ci/lora \
+            --report artifacts/ci/lora_eval_check.json \
+            --dry-run
 
       - name: Whitespace check
         run: git diff --check

@@ -33,6 +33,7 @@ def _add_common_backend_args(parser: argparse.ArgumentParser, default_backend: s
     parser.add_argument("--q4-model")
     parser.add_argument("--q8-model")
     parser.add_argument("--fp16-model")
+    parser.add_argument("--adapter-dir")
 
 
 def _build_backend(args: argparse.Namespace):
@@ -55,6 +56,7 @@ def _build_backend(args: argparse.Namespace):
         return TransformersModelRunner.from_pretrained(
             args.model_id,
             precision_models=precision_models or None,
+            adapter_dir=args.adapter_dir,
         )
     except ImportError as exc:
         raise CliError(f"{exc}\nInstall optional dependencies with: pip install -e '.[transformers]'") from exc

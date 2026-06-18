@@ -9,6 +9,7 @@ TSQ includes an optional Hugging Face Transformers backend adapter through `Tran
 - One-token `step()` calls for the dynamic TSQ loop.
 - Full `generate()` calls for fixed-precision eval baselines.
 - Verifier repair mode by wrapping the current output, failures, and constraints into an inspectable repair prompt.
+- Optional PEFT adapter loading with `adapter_dir`.
 - Optional precision label mapping:
 
 ```python
@@ -26,12 +27,34 @@ runner = TransformersModelRunner.from_pretrained(
 
 If `precision_models` is omitted, TSQ loads `model_id` once and reuses it for all precision labels.
 
+Adapter loading:
+
+```python
+from tsq.runtime.model_runner import TransformersModelRunner
+
+runner = TransformersModelRunner.from_pretrained(
+    "HuggingFaceTB/SmolLM2-360M-Instruct",
+    adapter_dir="artifacts/models/tsq-lora-v08",
+)
+```
+
+CLI adapter evaluation:
+
+```bash
+python -m tsq.cli eval-suite \
+  --backend transformers \
+  --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
+  --adapter-dir artifacts/models/tsq-lora-v08 \
+  --report artifacts/reports/adapter_eval_suite.json
+```
+
 ## What This Backend Does Not Support
 
 - No native TSQ quantization.
 - No custom Q4/Q8 conversion.
 - No guarantee that precision labels change numerical precision unless you provide distinct backend model variants.
 - No mandatory Transformers dependency for default installs or default tests.
+- PEFT is required only when `adapter_dir` is supplied.
 
 Dynamic precision routing can choose labels such as `Q4`, `Q8`, and `FP16`, but actual model precision depends on the model IDs or paths supplied to the backend.
 

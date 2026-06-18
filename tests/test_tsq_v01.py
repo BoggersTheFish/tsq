@@ -27,6 +27,14 @@ from tsq.training.schema import PreferenceExample, RepairTrainingExample, Traini
 from tsq.training.validate_dataset import dataset_summary, validate_dataset
 
 
+def load_script_module(path: str, name: str):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(module)
+    return module
+
+
 class KnownTokenRunner:
     name = "known-token-runner"
 
@@ -579,6 +587,189 @@ def test_train_lora_dry_run_without_heavy_deps(tmp_path):
     )
     assert result.returncode == 0, result.stderr
     assert "dry-run ok" in result.stdout
+
+
+def test_train_lora_parser_accepts_v08_flags():
+    train_lora = load_script_module("scripts/train_lora.py", "train_lora_test_parser")
+    args = train_lora.build_parser().parse_args(
+        [
+            "--model-id",
+            "model",
+            "--train-jsonl",
+            "train.jsonl",
+            "--eval-jsonl",
+            "eval.jsonl",
+            "--repair-jsonl",
+            "repair.jsonl",
+            "--output-dir",
+            "out",
+            "--training-mode",
+            "mixed",
+            "--load-in-4bit",
+            "--bf16",
+            "--gradient-checkpointing",
+            "--max-seq-length",
+            "128",
+            "--per-device-train-batch-size",
+            "2",
+            "--gradient-accumulation-steps",
+            "4",
+            "--warmup-steps",
+            "1",
+            "--save-steps",
+            "2",
+            "--eval-steps",
+            "2",
+            "--logging-steps",
+            "1",
+            "--smoke-train",
+        ]
+    )
+    assert args.training_mode == "mixed"
+    assert args.load_in_4bit is True
+    assert args.max_seq_length == 128
+    assert args.smoke_train is True
+
+
+def test_training_formatters_handle_supervised_and_repair_rows():
+    train_lora = load_script_module("scripts/train_lora.py", "train_lora_test_formatters")
+    supervised = {
+        "input_text": "Prompt: include 7",
+        "target_text": "7",
+    }
+    repair = {
+        "repair_prompt": "Repair the output",
+        "repair_target": "7",
+    }
+    assert "TSQ-aware assistant" in train_lora.format_training_row(supervised)
+    assert "<Assistant>\n7" in train_lora.format_training_row(supervised)
+    assert "TSQ repair model" in train_lora.format_training_row(repair)
+    assert "Repair the output" in train_lora.format_training_row(repair)
+
+
+def test_mixed_dataset_preparation_combines_supervised_and_repair(tmp_path):
+    train_lora = load_script_module("scripts/train_lora.py", "train_lora_test_mixed")
+    paths = build_datasets(tmp_path / "generated")
+    rows = train_lora.load_formatted_examples(
+        paths["supervised_train"],
+        training_mode="mixed",
+        repair_jsonl=paths["repair_train"],
+    )
+    supervised_count = len(validate_dataset(paths["supervised_train"]))
+    repair_count = len(validate_dataset(paths["repair_train"]))
+    assert len(rows) == supervised_count + repair_count
+    assert any("TSQ repair model" in row["text"] for row in rows)
+
+
+def test_train_lora_missing_deps_error_is_clear(tmp_path, monkeypatch):
+    train_lora = load_script_module("scripts/train_lora.py", "train_lora_test_missing_deps")
+    paths = build_datasets(tmp_path / "generated")
+    original_find_spec = importlib.util.find_spec
+
+    def fake_find_spec(name, *args, **kwargs):
+        if name in {"torch", "transformers", "datasets", "peft", "accelerate"}:
+            return None
+        return original_find_spec(name)
+
+    monkeypatch.setattr(train_lora.importlib.util, "find_spec", fake_find_spec)
+    with pytest.raises(RuntimeError, match="Missing optional training dependencies"):
+        train_lora.main(
+            [
+                "--model-id",
+                "model",
+                "--train-jsonl",
+                str(paths["supervised_train"]),
+                "--eval-jsonl",
+                str(paths["supervised_eval"]),
+                "--output-dir",
+                str(tmp_path / "out"),
+            ]
+        )
+
+
+def test_transformers_runner_and_cli_accept_adapter_dir():
+    import inspect
+
+    signature = inspect.signature(TransformersModelRunner.from_pretrained)
+    assert "adapter_dir" in signature.parameters
+    parser = __import__("tsq.cli", fromlist=["build_parser"]).build_parser()
+    args = parser.parse_args(
+        [
+            "eval-suite",
+            "--backend",
+            "transformers",
+            "--model-id",
+            "tiny",
+            "--adapter-dir",
+            "adapter",
+            "--report",
+            "report.json",
+        ]
+    )
+    assert args.adapter_dir == "adapter"
+
+
+def test_eval_lora_dry_run_writes_check_report(tmp_path):
+    report = tmp_path / "eval_lora_check.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/eval_lora.py",
+            "--model-id",
+            "dry-run-model",
+            "--adapter-dir",
+            "adapter",
+            "--report",
+            str(report),
+            "--dry-run",
+        ],
+        cwd=Path.cwd(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert payload["mode"] == "lora-eval-check"
+    assert payload["adapter_dir"] == "adapter"
+
+
+def test_optional_lora_smoke_training(tmp_path):
+    if os.environ.get("TSQ_RUN_TRAINING_TESTS") != "1":
+        pytest.skip("set TSQ_RUN_TRAINING_TESTS=1 to run optional LoRA smoke training")
+    model_id = os.environ.get("TSQ_TRAINING_TEST_MODEL_ID")
+    if not model_id:
+        pytest.skip("set TSQ_TRAINING_TEST_MODEL_ID to a tiny causal LM")
+    missing = [
+        name
+        for name in ("torch", "transformers", "datasets", "peft", "accelerate")
+        if importlib.util.find_spec(name) is None
+    ]
+    if missing:
+        pytest.skip(f"missing optional training dependencies: {', '.join(missing)}")
+    paths = build_datasets(tmp_path / "generated")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/train_lora.py",
+            "--model-id",
+            model_id,
+            "--train-jsonl",
+            str(paths["supervised_train"]),
+            "--eval-jsonl",
+            str(paths["supervised_eval"]),
+            "--output-dir",
+            str(tmp_path / "lora"),
+            "--smoke-train",
+            "--max-steps",
+            "1",
+        ],
+        cwd=Path.cwd(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_cli_transformers_backend_missing_model_or_dependencies_is_clear(tmp_path, capsys):

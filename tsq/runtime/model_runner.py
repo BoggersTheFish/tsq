@@ -210,6 +210,7 @@ class TransformersModelRunner:
         model_id: str,
         precision_models: dict[str, str] | None = None,
         device: str | None = None,
+        adapter_dir: str | None = None,
         **kwargs: Any,
     ):
         if importlib.util.find_spec("transformers") is None or importlib.util.find_spec("torch") is None:
@@ -223,6 +224,7 @@ class TransformersModelRunner:
 
         self.name = f"transformers-{model_id.split('/')[-1]}"
         self.model_id = model_id
+        self.adapter_dir = adapter_dir
         self.precision_models = {
             "Q4": model_id,
             "Q8": model_id,
@@ -241,6 +243,15 @@ class TransformersModelRunner:
         for precision, mapped_model_id in self.precision_models.items():
             if mapped_model_id not in loaded_by_model_id:
                 model = AutoModelForCausalLM.from_pretrained(mapped_model_id, **kwargs)
+                if adapter_dir:
+                    if importlib.util.find_spec("peft") is None:
+                        raise ImportError(
+                            "adapter_dir requires optional dependency 'peft'. "
+                            "Install training dependencies or omit --adapter-dir."
+                        )
+                    from peft import PeftModel
+
+                    model = PeftModel.from_pretrained(model, adapter_dir)
                 model.to(self.device)
                 model.eval()
                 loaded_by_model_id[mapped_model_id] = model
@@ -252,12 +263,14 @@ class TransformersModelRunner:
         model_id: str,
         precision_models: dict[str, str] | None = None,
         device: str | None = None,
+        adapter_dir: str | None = None,
         **kwargs: Any,
     ) -> "TransformersModelRunner":
         return cls(
             model_id=model_id,
             precision_models=precision_models,
             device=device,
+            adapter_dir=adapter_dir,
             **kwargs,
         )
 
@@ -269,6 +282,7 @@ class TransformersModelRunner:
         metadata = {
             "backend": "transformers",
             "model_id": selected_model_id,
+            "adapter_dir": self.adapter_dir,
             "repair_mode": bool(kwargs.get("repair_mode")),
             "device": self.device,
         }
