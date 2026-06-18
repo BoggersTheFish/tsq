@@ -26,8 +26,7 @@ def cheap_entropy(logits: Any) -> float:
     For real implementation: use log_softmax + negative sum(p * log p).
     v0 stub returns a normalized proxy (0.0 low tension → 1.0 high tension).
     """
-    # Placeholder: in real code this would be torch.softmax + entropy calc
-    # For mock/demo we return a value influenced by external 'entropy_proxy'
+    # Mock/demo runners expose a cheap entropy_proxy; real runners can pass logits.
     if hasattr(logits, "entropy_proxy"):
         return float(getattr(logits, "entropy_proxy"))
     return 0.3  # default low tension

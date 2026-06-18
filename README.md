@@ -22,7 +22,7 @@ No custom quantization implemented yet.
 > Precision should follow unresolved tension.  
 > High precision is an *exception handler*, not the default mode.
 
-See `docs/TSQ_Full_Plan.md` for the complete architecture, roadmap (v0–v5), MVP components, risks, and success criteria.
+The architecture roadmap lives in this README for v0.1; deeper design notes can be added under `docs/` as the runtime grows.
 
 ## Quick Start
 ```bash
@@ -43,7 +43,7 @@ print('Compute receipts:', len(result['compute_receipts']))
 
 ## Repo Structure
 ```
-ts q/
+tsq/
 ├── tsq/
 │   ├── runtime/     # generation_loop, precision_router, model_runner
 │   ├── tension/     # scanner (cheap signals)

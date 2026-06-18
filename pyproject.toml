@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-  {name = "BoggersTheFish", email = "ben@b oggersthefish.com"}
+  {name = "BoggersTheFish", email = "ben@boggersthefish.com"}
 ]
 dependencies = [
   # Add real deps later: torch, transformers, etc. when wiring real models

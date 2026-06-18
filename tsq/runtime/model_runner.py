@@ -79,8 +79,8 @@ class MockModelRunner:
 
 class TransformersModelRunner:
     """
-    Stub for real Hugging Face Transformers + quantization backends.
-    v0.1: NOT IMPLEMENTED — this is a placeholder so the interface is ready.
+    Adapter surface for real Hugging Face Transformers + quantization backends.
+    v0.1 keeps this optional so default tests do not require torch/transformers.
     When dependencies are present, this can be fleshed out to load
     Q4/Q8/FP16 variants of TensionLM or other models.
 
@@ -91,7 +91,7 @@ class TransformersModelRunner:
         )
     """
 
-    def __init__(self, name: str = "transformers-stub"):
+    def __init__(self, name: str = "transformers-adapter"):
         self.name = name
         self._model = None
         self._tokenizer = None
@@ -104,10 +104,10 @@ class TransformersModelRunner:
 
     @classmethod
     def from_pretrained(cls, model_id: str, **kwargs: Any) -> "TransformersModelRunner":
-        """Placeholder factory. Real implementation would load multiple quant variants."""
+        """Factory hook for a future multi-precision Transformers backend."""
         instance = cls(name=f"transformers-{model_id.split('/')[-1]}")
         # In real code: load tokenizer + multiple model variants here
-        print(f"[TransformersModelRunner] STUB: would load {model_id} (not implemented in v0.1)")
+        print(f"[TransformersModelRunner] adapter not wired in v0.1: {model_id}")
         return instance
 
     def step(self, precision: str = "Q4", **kwargs: Any) -> Any:
