@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tsq"
+version = "0.1.0"
+description = "Tension-Structured Quantization: Verifier-Gated Inference Runtime for Thinking System (TS)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+  {name = "BoggersTheFish", email = "ben@b oggersthefish.com"}
+]
+dependencies = [
+  # Add real deps later: torch, transformers, etc. when wiring real models
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "mypy"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
