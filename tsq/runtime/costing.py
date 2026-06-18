@@ -16,7 +16,7 @@ DEFAULT_COST_MODEL: Dict[str, float] = {
     "residual_unfolded": 4.0,
 }
 
-DEFAULT_COST_MODEL_NAME = "default_estimated_routing_cost_v0.8"
+DEFAULT_COST_MODEL_NAME = "default_estimated_routing_cost_v0.9"
 
 
 def empty_precision_counts() -> Dict[str, int]:

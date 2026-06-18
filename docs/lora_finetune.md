@@ -9,7 +9,7 @@ python scripts/train_lora.py \
   --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
   --train-jsonl data/generated/tsq_supervised_train.jsonl \
   --eval-jsonl data/generated/tsq_supervised_eval.jsonl \
-  --output-dir artifacts/models/tsq-lora-v08 \
+  --output-dir artifacts/models/tsq-lora-v09 \
   --max-steps 50 \
   --learning-rate 2e-4 \
   --lora-r 8

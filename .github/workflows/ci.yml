@@ -63,6 +63,16 @@ jobs:
             --adapter-dir artifacts/ci/lora \
             --report artifacts/ci/lora_eval_check.json \
             --dry-run
+          python scripts/check_training_env.py --no-fail
+          python scripts/run_v09_experiment.py \
+            --dry-run \
+            --model-id dry-run-model \
+            --experiment-dir artifacts/ci/experiment \
+            --report-dir artifacts/ci/reports \
+            --output-dir artifacts/ci/lora-v09
+          python scripts/summarize_experiment.py \
+            --manifest artifacts/ci/experiment/experiment_manifest.json \
+            --markdown artifacts/ci/experiment/summary.md
 
       - name: Whitespace check
         run: git diff --check

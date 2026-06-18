@@ -23,6 +23,7 @@ from tsq.runtime.precision_router import PrecisionRouter
 from tsq.tension.scanner import scan_recent_window
 from tsq.verifier.base import Verifier
 from tsq.training.dataset_builder import build_datasets
+from tsq.training.experiment import build_manifest, read_manifest, write_manifest
 from tsq.training.schema import PreferenceExample, RepairTrainingExample, TrainingExample
 from tsq.training.validate_dataset import dataset_summary, validate_dataset
 
@@ -589,7 +590,7 @@ def test_train_lora_dry_run_without_heavy_deps(tmp_path):
     assert "dry-run ok" in result.stdout
 
 
-def test_train_lora_parser_accepts_v08_flags():
+def test_train_lora_parser_accepts_current_flags():
     train_lora = load_script_module("scripts/train_lora.py", "train_lora_test_parser")
     args = train_lora.build_parser().parse_args(
         [
@@ -732,6 +733,124 @@ def test_eval_lora_dry_run_writes_check_report(tmp_path):
     payload = json.loads(report.read_text(encoding="utf-8"))
     assert payload["mode"] == "lora-eval-check"
     assert payload["adapter_dir"] == "adapter"
+
+
+def test_check_training_env_no_fail_exits_cleanly():
+    result = subprocess.run(
+        [sys.executable, "scripts/check_training_env.py", "--no-fail"],
+        cwd=Path.cwd(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "Python:" in result.stdout
+
+
+def test_experiment_manifest_schema_round_trips(tmp_path):
+    manifest = build_manifest(
+        model_id="dry-run-model",
+        adapter_dir="adapter",
+        dataset_files={"train": "train.jsonl"},
+        training_mode="mixed",
+        max_steps=2,
+        smoke_train=True,
+        dependency_status={"ready_for_training": False},
+        training_status="skipped_missing_dependencies",
+        eval_status="skipped_missing_dependencies",
+        eval_report_path=None,
+        notes=["missing deps"],
+    )
+    path = write_manifest(tmp_path / "manifest.json", manifest)
+    loaded = read_manifest(path)
+    required = {
+        "tsq_version",
+        "created_at",
+        "model_id",
+        "adapter_dir",
+        "dataset_files",
+        "training_mode",
+        "max_steps",
+        "smoke_train",
+        "commands_run",
+        "dependency_status",
+        "training_status",
+        "eval_status",
+        "eval_report_path",
+        "notes",
+    }
+    assert required <= set(loaded)
+    assert loaded["training_status"] == "skipped_missing_dependencies"
+
+
+def test_run_v09_experiment_dry_run_writes_manifest_without_model_load(tmp_path):
+    manifest_dir = tmp_path / "experiment"
+    report_dir = tmp_path / "reports"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/run_v09_experiment.py",
+            "--dry-run",
+            "--model-id",
+            "dry-run-model",
+            "--experiment-dir",
+            str(manifest_dir),
+            "--report-dir",
+            str(report_dir),
+            "--output-dir",
+            str(tmp_path / "adapter"),
+        ],
+        cwd=Path.cwd(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    manifest = json.loads((manifest_dir / "experiment_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["training_status"] == "dry_run"
+    assert manifest["eval_status"] == "dry_run"
+    assert "no model loaded" in result.stdout
+
+
+def test_summarize_experiment_handles_dry_run_manifest(tmp_path):
+    manifest = build_manifest(
+        model_id="dry-run-model",
+        adapter_dir="adapter",
+        dataset_files={},
+        training_mode="mixed",
+        max_steps=2,
+        smoke_train=False,
+        dependency_status={"ready_for_training": False},
+        training_status="dry_run",
+        eval_status="dry_run",
+        eval_report_path=None,
+    )
+    manifest_path = write_manifest(tmp_path / "manifest.json", manifest)
+    markdown = tmp_path / "summary.md"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/summarize_experiment.py",
+            "--manifest",
+            str(manifest_path),
+            "--markdown",
+            str(markdown),
+        ],
+        cwd=Path.cwd(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "training_status: dry_run" in result.stdout
+    assert "TSQ v0.9 Experiment Summary" in markdown.read_text(encoding="utf-8")
+
+
+def test_pyproject_has_training_extra():
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+    assert "training = " in pyproject
+    assert '"peft"' in pyproject
+    assert "qlora = " in pyproject
 
 
 def test_optional_lora_smoke_training(tmp_path):

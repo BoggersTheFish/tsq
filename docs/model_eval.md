@@ -1,13 +1,13 @@
 # Adapter Evaluation
 
-TSQ v0.8 can evaluate a base Transformers model and a PEFT adapter through the TSQ runtime.
+TSQ v0.9 can evaluate a base Transformers model and a PEFT adapter through the TSQ runtime.
 
 ## Check-Only
 
 ```bash
 python scripts/eval_lora.py \
   --model-id dry-run-model \
-  --adapter-dir artifacts/models/tsq-lora-v08 \
+  --adapter-dir artifacts/models/tsq-lora-v09 \
   --report artifacts/reports/tsq_lora_eval_check.json \
   --dry-run
 ```
@@ -19,8 +19,8 @@ This writes a small report and exits without loading heavy ML dependencies.
 ```bash
 python scripts/eval_lora.py \
   --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
-  --adapter-dir artifacts/models/tsq-lora-v08 \
-  --report artifacts/reports/tsq_lora_eval_v08.json \
+  --adapter-dir artifacts/models/tsq-lora-v09 \
+  --report artifacts/reports/tsq_lora_eval_v09.json \
   --max-new-tokens 32
 ```
 
@@ -38,7 +38,7 @@ The standard TSQ CLI also accepts `--adapter-dir` for Transformers backends:
 python -m tsq.cli eval-suite \
   --backend transformers \
   --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
-  --adapter-dir artifacts/models/tsq-lora-v08 \
+  --adapter-dir artifacts/models/tsq-lora-v09 \
   --report artifacts/reports/adapter_eval_suite.json
 ```
 

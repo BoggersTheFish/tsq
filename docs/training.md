@@ -1,6 +1,6 @@
 # TSQ Training
 
-TSQ v0.8 provides the first real LoRA/QLoRA fine-tuning path. Heavy ML dependencies are optional and are not installed by default CI.
+TSQ v0.9 provides the first real LoRA/QLoRA fine-tuning path. Heavy ML dependencies are optional and are not installed by default CI.
 
 ## Install Optional Dependencies
 
@@ -33,7 +33,7 @@ python scripts/train_lora.py \
   --model-id dry-run-model \
   --train-jsonl data/generated/tsq_supervised_train.jsonl \
   --eval-jsonl data/generated/tsq_supervised_eval.jsonl \
-  --output-dir artifacts/models/tsq-lora-v08 \
+  --output-dir artifacts/models/tsq-lora-v09 \
   --dry-run
 ```
 
@@ -46,7 +46,7 @@ python scripts/train_lora.py \
   --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
   --train-jsonl data/generated/tsq_supervised_train.jsonl \
   --eval-jsonl data/generated/tsq_supervised_eval.jsonl \
-  --output-dir artifacts/models/tsq-lora-v08-smoke \
+  --output-dir artifacts/models/tsq-lora-v09-smoke \
   --smoke-train \
   --max-steps 2
 ```
@@ -68,9 +68,9 @@ python scripts/train_lora.py \
   --eval-jsonl data/generated/tsq_supervised_eval.jsonl \
   --repair-jsonl data/generated/tsq_repair_train.jsonl \
   --training-mode mixed \
-  --output-dir artifacts/models/tsq-lora-v08
+  --output-dir artifacts/models/tsq-lora-v09
 ```
 
 ## Limitations
 
-The checked-in seed datasets are tiny and mainly prove the loop. Actual quality depends on dataset size, base model choice, hyperparameters, and evaluation through TSQ. v0.8 does not add native TSQ quantization.
+The checked-in seed datasets are tiny and mainly prove the loop. Actual quality depends on dataset size, base model choice, hyperparameters, and evaluation through TSQ. v0.9 does not add native TSQ quantization.

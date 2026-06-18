@@ -17,7 +17,7 @@ The default cost weights are:
 sum(tokens_at_precision * precision_cost_weight)
 ```
 
-The default model name in reports is `default_estimated_routing_cost_v0.8`.
+The default model name in reports is `default_estimated_routing_cost_v0.9`.
 
 ## Token Counts
 

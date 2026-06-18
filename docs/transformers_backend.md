@@ -34,7 +34,7 @@ from tsq.runtime.model_runner import TransformersModelRunner
 
 runner = TransformersModelRunner.from_pretrained(
     "HuggingFaceTB/SmolLM2-360M-Instruct",
-    adapter_dir="artifacts/models/tsq-lora-v08",
+    adapter_dir="artifacts/models/tsq-lora-v09",
 )
 ```
 
@@ -44,7 +44,7 @@ CLI adapter evaluation:
 python -m tsq.cli eval-suite \
   --backend transformers \
   --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
-  --adapter-dir artifacts/models/tsq-lora-v08 \
+  --adapter-dir artifacts/models/tsq-lora-v09 \
   --report artifacts/reports/adapter_eval_suite.json
 ```
 

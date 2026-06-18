@@ -1,6 +1,6 @@
 # TSQ Fine-Tuning Plan
 
-v0.8 provides the first executable LoRA/QLoRA fine-tuning path. It wires dataset loading, formatting, tokenization, PEFT LoRA configuration, Trainer execution, adapter saving, and adapter evaluation through TSQ.
+v0.9 provides the first executable LoRA/QLoRA fine-tuning path. It wires dataset loading, formatting, tokenization, PEFT LoRA configuration, Trainer execution, adapter saving, and adapter evaluation through TSQ.
 
 The seed datasets are intentionally small. They prove the loop; they do not by themselves justify a strong quality claim.
 

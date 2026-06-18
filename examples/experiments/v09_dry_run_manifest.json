@@ -1,0 +1,110 @@
+{
+  "adapter_dir": "artifacts/models/tsq-lora-v09",
+  "commands_run": [
+    [
+      "python",
+      "-m",
+      "tsq.cli",
+      "build-dataset",
+      "--out-dir",
+      "data/generated",
+      "--include-example-reports",
+      "examples/reports"
+    ],
+    [
+      "python",
+      "-m",
+      "tsq.cli",
+      "validate-dataset",
+      "--path",
+      "data/generated/tsq_supervised_train.jsonl"
+    ],
+    [
+      "python",
+      "-m",
+      "tsq.cli",
+      "validate-dataset",
+      "--path",
+      "data/generated/tsq_supervised_eval.jsonl"
+    ],
+    [
+      "python",
+      "-m",
+      "tsq.cli",
+      "validate-dataset",
+      "--path",
+      "data/generated/tsq_repair_train.jsonl"
+    ],
+    [
+      "python",
+      "scripts/train_lora.py",
+      "--model-id",
+      "dry-run-model",
+      "--train-jsonl",
+      "data/generated/tsq_supervised_train.jsonl",
+      "--eval-jsonl",
+      "data/generated/tsq_supervised_eval.jsonl",
+      "--repair-jsonl",
+      "data/generated/tsq_repair_train.jsonl",
+      "--training-mode",
+      "mixed",
+      "--output-dir",
+      "artifacts/models/tsq-lora-v09",
+      "--max-steps",
+      "2",
+      "--dry-run"
+    ],
+    [
+      "python",
+      "scripts/eval_lora.py",
+      "--model-id",
+      "dry-run-model",
+      "--adapter-dir",
+      "artifacts/models/tsq-lora-v09",
+      "--report",
+      "artifacts/reports/tsq_lora_eval_v09.json",
+      "--max-new-tokens",
+      "32",
+      "--max-tasks",
+      "3",
+      "--dry-run"
+    ]
+  ],
+  "created_at": "2026-06-18T00:00:00+00:00",
+  "dataset_files": {
+    "preference_pairs": "data/generated/tsq_preference_pairs.jsonl",
+    "repair_train": "data/generated/tsq_repair_train.jsonl",
+    "supervised_eval": "data/generated/tsq_supervised_eval.jsonl",
+    "supervised_train": "data/generated/tsq_supervised_train.jsonl"
+  },
+  "dependency_status": {
+    "accelerate": false,
+    "bitsandbytes": false,
+    "cuda_available": false,
+    "datasets": false,
+    "gpu_name": null,
+    "missing_core_deps": [
+      "torch",
+      "transformers",
+      "datasets",
+      "peft",
+      "accelerate"
+    ],
+    "peft": false,
+    "python_version": "3.12.3",
+    "ready_for_training": false,
+    "recommended_install": "pip install -e '.[training]'",
+    "recommended_qlora_install": "pip install -e '.[qlora]'",
+    "torch": false,
+    "transformers": false
+  },
+  "eval_report_path": "artifacts/reports/tsq_lora_eval_v09.json",
+  "eval_status": "dry_run",
+  "max_steps": 2,
+  "model_id": "dry-run-model",
+  "notes": [],
+  "smoke_train": false,
+  "training_mode": "mixed",
+  "training_status": "dry_run",
+  "tsq_version": "0.9.0"
+}

@@ -106,4 +106,4 @@ Preference pairs are generated for repaired examples:
 - `chosen_output`: repaired verifier-passing output
 - `reason`: verifier failure repaired into constraint satisfaction
 
-This prepares a later DPO-style or preference fine-tuning wave. v0.8 focuses on supervised and repair LoRA training, not DPO.
+This prepares a later DPO-style or preference fine-tuning wave. v0.9 focuses on supervised and repair LoRA training, not DPO.

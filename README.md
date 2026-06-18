@@ -13,11 +13,11 @@ TSQ treats inference compute as a *structural* problem: precision should follow 
 
 This is the **inference/runtime layer** complement to [TensionLM](https://github.com/BoggersTheFish/TensionLM) (the model architecture layer using sigmoid tension attention).
 
-**Status**: v0.8 — First LoRA/QLoRA fine-tuning path. TSQ can now train a small causal LM adapter from generated supervised/repair JSONL data when optional ML dependencies are installed, then evaluate the adapter through the TSQ runtime.
-Mock/backend-runtime demo + full test suite pass. Optional Transformers support, adapter loading, verifier-gated repair, backend-owned token generation, receipts, cost accounting, eval suites, and training data generation remain active.
+**Status**: v0.9 — First reproducible adapter experiment harness. TSQ can now check the training environment, run a tiny LoRA/QLoRA adapter experiment, evaluate base vs adapter through TSQ, and write an experiment manifest/summary.
+Mock/backend-runtime demo + full test suite pass. Optional Transformers support, adapter loading, verifier-gated repair, backend-owned token generation, receipts, cost accounting, eval suites, training data generation, and LoRA training remain active.
 Still cheap-first: only entropy proxy + lexical risk + verifier failure in the hot path.
 No custom quantization implemented yet.
-No strong fine-tuned TSQ model is claimed from the tiny seed dataset.
+No committed model artifacts or strong adapter quality claim are included.
 
 ## Core Thesis (TS Native)
 > Precision should follow unresolved tension.  
@@ -136,13 +136,18 @@ python -m tsq.cli dataset-summary \
 
 ## Training
 
+Check training environment:
+```bash
+python scripts/check_training_env.py --no-fail
+```
+
 Dry-run training validation:
 ```bash
 python scripts/train_lora.py \
   --model-id dry-run-model \
   --train-jsonl data/generated/tsq_supervised_train.jsonl \
   --eval-jsonl data/generated/tsq_supervised_eval.jsonl \
-  --output-dir artifacts/models/tsq-lora-v08 \
+  --output-dir artifacts/models/tsq-lora-v09 \
   --dry-run
 ```
 
@@ -152,7 +157,7 @@ python scripts/train_lora.py \
   --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
   --train-jsonl data/generated/tsq_supervised_train.jsonl \
   --eval-jsonl data/generated/tsq_supervised_eval.jsonl \
-  --output-dir artifacts/models/tsq-lora-v08-smoke \
+  --output-dir artifacts/models/tsq-lora-v09-smoke \
   --smoke-train \
   --max-steps 2
 ```
@@ -163,7 +168,7 @@ python scripts/train_lora.py \
   --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
   --train-jsonl data/generated/tsq_supervised_train.jsonl \
   --eval-jsonl data/generated/tsq_supervised_eval.jsonl \
-  --output-dir artifacts/models/tsq-lora-v08 \
+  --output-dir artifacts/models/tsq-lora-v09 \
   --max-steps 50 \
   --learning-rate 2e-4 \
   --lora-r 8
@@ -173,12 +178,39 @@ Evaluate an adapter:
 ```bash
 python scripts/eval_lora.py \
   --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
-  --adapter-dir artifacts/models/tsq-lora-v08 \
-  --report artifacts/reports/tsq_lora_eval_v08.json \
+  --adapter-dir artifacts/models/tsq-lora-v09 \
+  --report artifacts/reports/tsq_lora_eval_v09.json \
   --max-new-tokens 32
 ```
 
 Heavy training dependencies are optional. The seed dataset is small and proves the loop; it is not expected to produce a strong model by itself.
+
+## Adapter Experiment
+
+Dry-run the full experiment harness:
+```bash
+python scripts/run_v09_experiment.py \
+  --dry-run \
+  --model-id dry-run-model
+```
+
+Run a tiny smoke experiment when optional ML dependencies and a small model are available:
+```bash
+python scripts/run_v09_experiment.py \
+  --model-id HuggingFaceTB/SmolLM2-360M-Instruct \
+  --smoke-train \
+  --max-steps 2
+```
+
+Summarize an experiment:
+```bash
+python scripts/summarize_experiment.py \
+  --manifest artifacts/experiments/v09/experiment_manifest.json \
+  --eval-report artifacts/reports/tsq_lora_eval_v09.json \
+  --markdown artifacts/experiments/v09/summary.md
+```
+
+The experiment harness writes a manifest with commands, dependency status, training status, eval status, dataset files, and notes. If dependencies are missing, training is recorded as skipped rather than faked.
 
 ## Repo Structure
 ```
@@ -202,8 +234,8 @@ tsq/
 - **Routing** → tension propagation → activation of higher-resolution "structures" (precision levels as resolution nodes).
 - Every component declares explicit **TS headers** (nodes, tension sources, verifier hooks, receipt outputs).
 
-**Wave Goal**: v0.8 makes the TSQ training loop executable end to end: build datasets, train a PEFT LoRA adapter when optional ML dependencies are installed, and evaluate that adapter through TSQ.
-Any compliant ModelRunner can be dropped in. The system demonstrates verifier-gated dynamic precision with bounded repair passes, isolated baseline comparisons, estimated routing-cost accounting, persistent receipts, inspectable reports, seed training datasets, and adapter-aware Transformers evaluation while keeping default CI lightweight.
+**Wave Goal**: v0.9 makes the first adapter experiment reproducible: check deps, build data, train when possible, evaluate base vs adapter, write a manifest, and summarize the evidence.
+Any compliant ModelRunner can be dropped in. The system demonstrates verifier-gated dynamic precision with bounded repair passes, isolated baseline comparisons, estimated routing-cost accounting, persistent receipts, inspectable reports, seed training datasets, adapter-aware Transformers evaluation, and experiment manifests while keeping default CI lightweight.
 See `docs/transformers_backend.md` for the optional real-model adapter.
 See `docs/reports.md` for report schemas and interpretation.
 See `docs/evals.md` for eval suite fixtures.
@@ -212,6 +244,7 @@ See `docs/training_data.md` for dataset schemas and generation.
 See `docs/training.md` and `docs/lora_finetune.md` for the training path.
 See `docs/model_eval.md` for adapter evaluation.
 See `docs/fine_tuning_plan.md` for quality criteria and next steps.
+See `docs/v09_experiment.md` for the reproducible adapter experiment harness.
 
 ---
 
